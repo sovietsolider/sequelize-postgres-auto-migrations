@@ -1,41 +1,51 @@
 import { QueryTypes } from 'sequelize';
-import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement } from 'sequelize-typescript';
+import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
-import { compareTables, getModelByTableName } from './common/cmpFunctions';
-import { singularize } from 'sequelize/types/utils';
+import { compareTables, getModelByTableName, generateStringToAddTableBySchemaInfo } from './common/cmpFunctions';
+import { Col, singularize } from 'sequelize/types/utils';
 import { generateMigrationFile } from './common/fileGen';
 import { generateModelsInfo } from './common/modelsInfoGen';
+import { ArrayTypeModel, EnumTypeModel } from '../tests/testModels';
+import * as fs from 'fs'
 
-@Table({tableName: "book", schema: "public"})
-class Book extends Model {
-  @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  id!: number;
-  
-  @Column(DataType.STRING)
-  name!: string;
-}
 @Table
 class Person extends Model {
-  @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  id!: number;
-  
-  @Column(DataType.STRING)
-  name!: string;
+  @HasMany(() => Book, 'authorId')
+  writtenBooks!: Book[];
+
+  @HasMany(() => Book, 'proofreaderId')
+  proofedBooks!: Book[];
 }
-@Table({schema: "temp", tableName: "an"})
+
+@Table
+class Book extends Model {
+  @ForeignKey(() => Person)
+  @Column
+  authorId!: number;
+
+  @ForeignKey(() => Person)
+  @Column
+  proofreaderId!: number;
+  
+  @BelongsTo(() => Person, 'authorId')
+  author!: Person;
+
+  @BelongsTo(() => Person, 'proofreaderId')
+  proofreader!: Person;
+}
+
+@Table({schema: 'temp'})
 class Item extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER)
+  @Column
   id!: number;
-  
-  @Column(DataType.STRING)
+
+  @Column
   name!: string;
 }
+
+
 
 export const sequelize = new Sequelize({
   database: 'test',
@@ -43,30 +53,29 @@ export const sequelize = new Sequelize({
   host: "localhost",
   username: 'postgres',
   password: '666666',
-  models: [Book, Person, Item], // or [Player, Team],
+  models: [Item, Book, Person], 
   define: {
     freezeTableName: true,
-    timestamps: false,
   }
 });
 
+export const sequelize_types = new Sequelize({
+  database: 'test',
+  dialect: 'postgres',
+  host: "localhost",
+  username: 'postgres',
+  password: '666666',
+  models: [ArrayTypeModel, EnumTypeModel], 
+  define: {
+    freezeTableName: true,
+  }
+});
 
 (async () => {
-  //console.log(Book.getTableName())
-  console.log(generateModelsInfo(sequelize))
-  //console.log(Book.getAttributes().name.type.constructor.name)
-  //sequelize.sync({})
-  sequelize.getQueryInterface().dropTable({tableName: "an", schema: "temp"});
-  //sequelize.models.Book
-    //const jane = await Book.create({name: "If does not field"});
-    //const antony = await Book.create({name: "Antony"});
-    //const jj = await Person.create({name: "Jane"})
-    //const Mile = await Person.build({name: "Mike", data: 22})
-    //console.log(sequelize.models);
+  //await sequelize.sync({force:true})
   let path = (generateMigrationFile("add-new"));
+  //console.log(item.getAttributes())
   compareTables(sequelize, path);
 })();
-
-//console.log(getModelByTableName(sequelize, "BookLL"));
 
 

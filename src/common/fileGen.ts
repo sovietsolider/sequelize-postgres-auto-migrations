@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import { sequelize } from '../main';
+import { resolve } from 'path'
 
-export function addTableToContent(table_name: string) {
+export function generateDownString(): string {
+    return "down: async (queryInterface, Sequelize) => { await queryInterface.sequelize.transaction(async (t) => {"
     
 }
 
@@ -20,12 +22,12 @@ export function writeToMigrationFile(path:string, content: string) {
 
 export function generateMigrationFile(migrationName: string): string {
     let content: string = "module.exports = {\n up: async (queryInterface, Sequelize) => {\nawait queryInterface.sequelize.transaction(async (t) => {";
-    let path: string = `./${generateFileName(migrationName)}.js`;
+    let path: string = `../migrations/${generateFileName(migrationName)}.js`;
     try {
         fs.writeFileSync(path, content)
     }
     catch(error) {
         console.log(error)
     }
-    return path;
+    return resolve(path);
 }
