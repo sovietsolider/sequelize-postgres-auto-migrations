@@ -1,52 +1,55 @@
-import { DataType } from "sequelize-typescript"
+import { DataType } from 'sequelize-typescript';
 
 export interface SchemaTableColumn {
-    table_schema: string,
-    table_name: string,
-    column_name: string,
-    data_type: string, 
-    character_maximum_length: any,
-    column_default: any,
-    is_nullable: any
+    table_schema: string;
+    table_name: string;
+    column_name: string;
+    data_type: string;
+    character_maximum_length: any;
+    column_default: any;
+    is_nullable: any;
 }
 
 export interface SchemaTableColumnsConstraints {
-    constraint_type: string,
-    table_schema: string,
-    constraint_name: string,
-    table_name: string,
-    column_name: string,
-    foreign_table_schema: string,
-    foreign_table_name: string,
-    foreign_column_name: string
+    constraint_type: string;
+    table_schema: string;
+    constraint_name: string;
+    table_name: string;
+    column_name: string;
+    foreign_table_schema: string;
+    foreign_table_name: string;
+    foreign_column_name: string;
 }
 
 export const sqlToSeqTypes = {
-    "bigint": DataType.BIGINT,
-    "boolean": DataType.BOOLEAN,
-    "character": DataType.CHAR,
-    "character varying": DataType.STRING,
-    "cidr": DataType.CIDR,
-    "date": DataType.DATE,
-    "double precision": DataType.DOUBLE,
-    "inet": DataType.INET,
-    "integer": DataType.INTEGER,
-    "json": DataType.JSON,
-    "jsonb": DataType.JSONB,
-    "macaddr": DataType.MACADDR,
-    "real": DataType.REAL,
-    "smallint": DataType.SMALLINT,
-    "text": DataType.TEXT,
-    "time": DataType.TIME,
-    "timestamp with zone": DataType.DATE,
-    "timestamp with time zone": DataType.DATE,
-    "timestamp without time zone": DataType.DATE,
-    "bitea": DataType.BLOB,
-    "citext": DataType.CITEXT,
-    "uuid": DataType.UUIDV1,
-}
+    bigint: DataType.BIGINT,
+    boolean: DataType.BOOLEAN,
+    character: DataType.CHAR,
+    'character varying': DataType.STRING,
+    cidr: DataType.CIDR,
+    date: DataType.DATE,
+    'double precision': DataType.DOUBLE,
+    inet: DataType.INET,
+    integer: DataType.INTEGER,
+    json: DataType.JSON,
+    jsonb: DataType.JSONB,
+    macaddr: DataType.MACADDR,
+    real: DataType.REAL,
+    smallint: DataType.SMALLINT,
+    text: DataType.TEXT,
+    time: DataType.TIME,
+    'timestamp with zone': DataType.DATE,
+    'timestamp with time zone': DataType.DATE,
+    'timestamp without time zone': DataType.DATE,
+    bitea: DataType.BLOB,
+    citext: DataType.CITEXT,
+    uuid: DataType.UUIDV1,
+};
 
-export function getColumnsConstraintsSchemaInfo(table_schema:string, table_name: string) {
+export function getColumnsConstraintsSchemaInfo(
+    table_schema: string,
+    table_name: string,
+) {
     return `SELECT \
 tc.constraint_type, \
 tc.table_schema, \
@@ -70,5 +73,5 @@ JOIN (select row_number() over (partition by table_schema, table_name, constrain
   ON ccu.constraint_name = tc.constraint_name \
   AND ccu.table_schema = tc.table_schema \
   AND ccu.ordinal_position = kcu.ordinal_position \
-WHERE tc.table_name = '${table_name}' AND tc.table_schema = '${table_schema}';`
+WHERE tc.table_name = '${table_name}' AND tc.table_schema = '${table_schema}';`;
 }
