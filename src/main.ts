@@ -1,21 +1,7 @@
 import { QueryTypes } from 'sequelize';
-import {
-    Table,
-    Column,
-    Model,
-    HasMany,
-    DataType,
-    PrimaryKey,
-    AutoIncrement,
-    BelongsTo,
-    ForeignKey,
-} from 'sequelize-typescript';
+import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
-import {
-    compareTables,
-    getModelByTableName,
-    generateStringToAddTableBySchemaInfo,
-} from './common/cmpFunctions';
+import { compareTables, getModelByTableName, generateStringToAddTableBySchemaInfo } from './common/cmpFunctions';
 import { Col, singularize } from 'sequelize/types/utils';
 import { generateMigrationFile } from './common/fileGen';
 import { generateModelsInfo } from './common/modelsInfoGen';
@@ -36,6 +22,12 @@ class Book extends Model {
     @ForeignKey(() => Person)
     @Column
     authorId!: number;
+
+    @Column(DataType.STRING(176))
+    name!: string;
+
+    @Column(DataType.ARRAY(DataType.ARRAY(DataType.ARRAY(DataType.STRING))))
+    name_array!: string[][];
 
     @ForeignKey(() => Person)
     @Column
@@ -84,8 +76,8 @@ export const sequelize_types = new Sequelize({
 });
 
 (async () => {
-    //await sequelize.sync({force:true})
+    await sequelize.sync({ force: true });
     let path = generateMigrationFile('add-new');
     //console.log(item.getAttributes())
-    compareTables(sequelize, path);
+    compareTables(sequelize_types, path);
 })();

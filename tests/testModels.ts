@@ -56,7 +56,7 @@ class ArrayTypeModel extends Model {
 
 @Table
 class EnumTypeModel extends Model {
-  @Column(DataType.ENUM("ONE", "TWO", "THREE"))
+  @Column(DataType.ARRAY(DataType.ARRAY(DataType.INTEGER)))
   names_enum!: number[]
 }
 export {Person, Book, Item, AnotherItem, ArrayTypeModel, EnumTypeModel}

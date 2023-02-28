@@ -46,10 +46,7 @@ export const sqlToSeqTypes = {
     uuid: DataType.UUIDV1,
 };
 
-export function getColumnsConstraintsSchemaInfo(
-    table_schema: string,
-    table_name: string,
-) {
+export function getColumnsConstraintsSchemaInfo(table_schema: string, table_name: string) {
     return `SELECT \
 tc.constraint_type, \
 tc.table_schema, \

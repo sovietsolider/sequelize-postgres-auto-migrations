@@ -22,8 +22,7 @@ export function writeToMigrationFile(path: string, content: string) {
 }
 
 export function generateMigrationFile(migrationName: string): string {
-    let content: string =
-        'module.exports = {\n up: async (queryInterface, Sequelize) => {\nawait queryInterface.sequelize.transaction(async (t) => {';
+    let content: string = 'module.exports = {\n up: async (queryInterface, Sequelize) => {\nawait queryInterface.sequelize.transaction(async (t) => {';
     let path: string = `../migrations/${generateFileName(migrationName)}.js`;
     try {
         fs.writeFileSync(path, content);
