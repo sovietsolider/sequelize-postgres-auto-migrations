@@ -13,7 +13,6 @@ function generateFileName(migrationName: string) {
         .slice(0, -3)}-${migrationName}`;
 }
 export function writeToMigrationFile(path: string, content: string) {
-    console.log('PATH:' + path);
     try {
         fs.appendFileSync(path, content);
     } catch (error) {
@@ -23,11 +22,13 @@ export function writeToMigrationFile(path: string, content: string) {
 
 export function generateMigrationFile(migrationName: string): string {
     let content: string = 'module.exports = {\n up: async (queryInterface, Sequelize) => {\nawait queryInterface.sequelize.transaction(async (t) => {';
-    let path: string = `../migrations/${generateFileName(migrationName)}.js`;
+    let path: string = resolve(__dirname, `../../migrations/${generateFileName(migrationName)}.js`);
+    console.log('PATH:' + path);
     try {
         fs.writeFileSync(path, content);
     } catch (error) {
+        console.log('FILE NOT CREATED')
         console.log(error);
     }
-    return resolve(path);
+    return path;
 }

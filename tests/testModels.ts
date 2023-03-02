@@ -1,40 +1,51 @@
-import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey } from 'sequelize-typescript';
+import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull } from 'sequelize-typescript';
 
 @Table
 class Person extends Model {
-  @HasMany(() => Book, 'authorId')
-  writtenBooks!: Book[];
+    @HasMany(() => Book, 'authorId')
+    writtenBooks!: Book[];
 
-  @HasMany(() => Book, 'proofreaderId')
-  proofedBooks!: Book[];
+    @HasMany(() => Book, 'proofreaderId')
+    proofedBooks!: Book[];
 }
 
 @Table
 class Book extends Model {
-  @ForeignKey(() => Person)
-  @Column
-  authorId!: number;
+    @ForeignKey(() => Person)
+    @Column
+    authorId!: number;
 
-  @ForeignKey(() => Person)
-  @Column
-  proofreaderId!: number;
-  
-  @BelongsTo(() => Person, 'authorId')
-  author!: Person;
+    @Column(DataType.STRING(176))
+    name!: string;
 
-  @BelongsTo(() => Person, 'proofreaderId')
-  proofreader!: Person;
+    @Column(DataType.ARRAY(DataType.ARRAY(DataType.ARRAY(DataType.STRING(70)))))
+    name_array!: string[][][];
+
+    @Column(DataType.ENUM("ONE", "TWO", "THREE",))
+    nameE!: string[]
+
+    @ForeignKey(() => Person)
+    @Column(DataType.SMALLINT)
+    proofreaderId!: number;
+
+    @BelongsTo(() => Person, 'authorId')
+    author!: Person;
+
+    @BelongsTo(() => Person, 'proofreaderId')
+    proofreader!: Person;
 }
 
-@Table({schema: 'temp'})
+@Table({ schema: 'temp' })
 class Item extends Model {
-  @PrimaryKey
-  @AutoIncrement
-  @Column
-  id!: number;
+    @PrimaryKey
+    @AutoIncrement
+    @AllowNull(false)
+    @Column
+    id!: number;
 
-  @Column
-  name!: string;
+    @PrimaryKey
+    @Column
+    name!: string;
 }
 
 @Table({tableName: "Item"})

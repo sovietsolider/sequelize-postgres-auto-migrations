@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "lib": ["es5", "es6", "dom", "dom.iterable"],
     "target": "es2017",                                
     "experimentalDecorators": true,                   
     "emitDecoratorMetadata": true,                   
