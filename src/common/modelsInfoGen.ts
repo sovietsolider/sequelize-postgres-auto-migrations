@@ -44,6 +44,8 @@ export async function generateTableInfo(sequelize: Sequelize, table_schema: stri
                 and ns.nspname = '${table_schema}') a JOIN (SELECT table_schema, table_name, column_name, data_type, character_maximum_length, column_default, is_nullable, udt_name FROM information_schema.columns WHERE table_schema='${table_schema}' AND table_name='${table_name}') b ON b.column_name = a.attname;`
                     )) as unknown as []
     ).at(0) as unknown as SchemaTableColumnWithoutConstr[];
+    console.log("SCHEMA TABLE COLUMNS");
+    console.log(schema_table_columns)
     const schema_table_columns_constraints: SchemaTableColumnsConstraints[] = (await sequelize.query(`${getColumnsConstraintsSchemaInfo(table_schema, table_name)}`)).at(0) as unknown as SchemaTableColumnsConstraints[];
     const pg_types: any = await sequelize.query(getPgColumnsInfo(table_schema, table_name));
     for(const column of schema_table_columns) {
@@ -58,6 +60,7 @@ export async function generateTableInfo(sequelize: Sequelize, table_schema: stri
             default_value: column.column_default,
             dimension: column.attndims,
             in_nullable: column.is_nullable,
+            constraint_name: null,
             constraint_type: null,
             foreign_table_name: null,
             foreign_column_name: null,
@@ -70,14 +73,30 @@ export async function generateTableInfo(sequelize: Sequelize, table_schema: stri
                 res[column.column_name].foreign_table_name = constraint.foreign_table_name;
                 res[column.column_name].foreign_column_name = constraint.foreign_column_name;
                 res[column.column_name].foreign_table_schema = constraint.foreign_table_schema;
+                res[column.column_name].constraint_name = constraint.constraint_name
             }
             else if(column.column_name === constraint.column_name) {
                 res[column.column_name].constraint_type = constraint.constraint_type;
                 res[column.column_name].foreign_table_name = null;
                 res[column.column_name].foreign_column_name = null;
                 res[column.column_name].foreign_table_schema = null;
+                res[column.column_name].constraint_name = null;
             }
         }
     }
     return Promise.resolve(res);
+}
+
+export async function getForeignKeyOptions(sequelize: Sequelize, name: string, table_schema: string): Promise<
+    {
+        update_rule: string | null, 
+        delete_rule: string | null
+    }> {
+    let options:any = (await sequelize.query(`select constraint_schema, constraint_name, update_rule, delete_rule from information_schema.referential_constraints WHERE constraint_schema='${table_schema}';`)).at(0);
+    console.log(options);
+    for(const val in options) {
+        if(options[val].constraint_name === name)
+            return Promise.resolve({ update_rule: options[val].update_rule, delete_rule: options[val].delete_rule })
+    }
+    return Promise.resolve({ update_rule: null, delete_rule: null});
 }

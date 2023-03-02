@@ -4,7 +4,7 @@ import { Sequelize } from 'sequelize-typescript';
 import { compareTables, getModelByTableName, generateStringToAddTableBySchemaInfo } from './common/cmpFunctions';
 import { Col, singularize } from 'sequelize/types/utils';
 import { generateMigrationFile } from './common/fileGen';
-import { generateModelsInfo } from './common/modelsInfoGen';
+import { generateModelsInfo, getForeignKeyOptions } from './common/modelsInfoGen';
 import { ArrayTypeModel, EnumTypeModel } from '../tests/testModels';
 import { getPgColumnsInfo } from './common/queryParsingFun';
 import { generateTableInfo } from './common/modelsInfoGen';
@@ -83,11 +83,13 @@ export const sequelize_types = new Sequelize({
 });
 
 (async () => {
+    //await getForeignKeyOptions(sequelize, 'Book', 'public');
     //for(const v in sequelize.models)
     //    console.log(sequelize.models[v].getAttributes())
-    //await sequelize_types.sync({ force: true });
-    //console.log(await sequelize.query('SELECT enum_range(NULL::"enum_Book_name_enum");'));
-    //let path = generateMigrationFile('add-new');
+    //await sequelize.sync({ force: true });
+
+    
+    let path = generateMigrationFile('add-new');
     //console.log(item.getAttributes())
-    //await compareTables(sequelize, path);
+    await compareTables(sequelize_types, path);
 })();

@@ -2,7 +2,7 @@ import { QueryTypes, col } from 'sequelize';
 import { Sequelize, Model, ModelCtor } from 'sequelize-typescript';
 import { writeToMigrationFile } from './fileGen';
 import { ObjectType } from 'typescript';
-import { generateModelsInfo, modelInfoType } from './modelsInfoGen';
+import { generateModelsInfo, modelInfoType, getForeignKeyOptions } from './modelsInfoGen';
 import {  sqlToSeqTypes, SchemaTableColumnsConstraints, SchemaColumnType, SchemaColumns } from './interfaces';
 import { getTypeByModelAttr } from './queryParsingFun';
 import { generateTableInfo } from './modelsInfoGen';
@@ -118,8 +118,14 @@ export async function generateStringToAddTableBySchemaInfo(sequelize: Sequelize,
 
             if(options.constraint_type && options.constraint_type === 'PRIMARY KEY')               //CONSTRAINTS 
                 res_string += 'primaryKey: true,'
-            else if(options.constraint_type && options.constraint_type === 'FOREIGN KEY') 
+            else if(options.constraint_type && options.constraint_type === 'FOREIGN KEY') {
                 res_string += `references: { model: { tableName: '${options.foreign_table_name}', schema: '${options.foreign_table_schema}', key: '${options.foreign_table_name}'},`
+                let fk_options = await getForeignKeyOptions(sequelize, options.constraint_name, options.table_schemas);
+                console.log("FK OPTIONS")
+                console.log(fk_options)
+                res_string += `onUpdate: '${fk_options.update_rule}',`
+                res_string += `onDelete: '${fk_options.delete_rule}',`
+            }
             res_string += '},'
         }
         res_string += `},{ transaction: t, schema: "${table_schema}"},);`;

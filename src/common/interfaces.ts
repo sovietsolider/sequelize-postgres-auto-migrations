@@ -39,7 +39,8 @@ export interface SchemaColumnType{
     constraint_type: any,
     foreign_table_name: any,
     foreign_column_name: any,
-    foreign_table_schema: any
+    foreign_table_schema: any,
+    constraint_name: any
 }
 
 export interface SchemaColumns {
