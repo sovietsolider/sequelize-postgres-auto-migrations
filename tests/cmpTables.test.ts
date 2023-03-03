@@ -1,9 +1,8 @@
 import {describe, expect, test} from '@jest/globals';
-import { addMissingTablesToDb, compareTables } from '../src/common/cmpFunctions';
 import { Sequelize } from 'sequelize-typescript';
 import { Item, Book, Person, AnotherItem, ArrayTypeModel, EnumTypeModel} from './testModels'
-import { generateMigrationFile } from '../src/common/fileGen';
-import { modelInfoType, generateModelsInfo } from '../src/common/modelsInfoGen';
+import { FileService } from '../src/services/file.service';
+import { compareTables } from '../src/common/cmpFunctions';
 import * as fs from 'fs' 
 import * as path from 'path'
 
@@ -39,7 +38,7 @@ const final_cmp = path.resolve(__dirname, "./compareTablesTest.js")
 
 describe('cmpTable module', () => {
   test('final comparison btw two tables (not including attributes)', async () => {
-    let path_ = generateMigrationFile('add-new');
+    let path_ = FileService.generateMigrationFile('add-new', '../');
     console.log(path_)
     await compareTables(sequelize, path_);
     expect(fs.readFileSync(`${path_}`).toString().replace(/\s/g, "")).toBe(fs.readFileSync(final_cmp).toString().replace(/\s/g, ""))

@@ -5,7 +5,7 @@ export interface SchemaTableColumnWithoutConstr {
     table_name: string;
     column_name: string;
     data_type: string;
-    character_maximum_length: any;
+    character_maximum_length: string|null;
     column_default: any;
     is_nullable: any,
     attndims: any,
@@ -96,4 +96,9 @@ export const sqlToSeqTypes:sqlToSeqTypesInterface = {
     citext: 'DataType.CITEXT',
     uuid: 'DataType.UUIDV1',
 };
+
+export interface modelInfoType {
+    table_name: string;
+    table_schema: string;
+}
 

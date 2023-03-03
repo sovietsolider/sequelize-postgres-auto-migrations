@@ -1,14 +1,8 @@
-import { QueryTypes } from 'sequelize';
 import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
-import { compareTables, getModelByTableName, generateStringToAddTableBySchemaInfo } from './common/cmpFunctions';
-import { Col, singularize } from 'sequelize/types/utils';
-import { generateMigrationFile } from './common/fileGen';
-import { generateModelsInfo, getForeignKeyOptions } from './common/modelsInfoGen';
+import { compareTables, compareTablesAttributes } from './common/cmpFunctions';
 import { ArrayTypeModel, EnumTypeModel } from '../tests/testModels';
-import { getPgColumnsInfo } from './common/queryParsingFun';
-import { generateTableInfo } from './common/modelsInfoGen';
-import * as fs from 'fs';
+import { FileService } from './services/file.service';
 
 @Table
 class Person extends Model {
@@ -83,13 +77,7 @@ export const sequelize_types = new Sequelize({
 });
 
 (async () => {
-    //await getForeignKeyOptions(sequelize, 'Book', 'public');
-    //for(const v in sequelize.models)
-    //    console.log(sequelize.models[v].getAttributes())
     //await sequelize.sync({ force: true });
-
-    
-    let path = generateMigrationFile('add-new');
-    //console.log(item.getAttributes())
-    await compareTables(sequelize_types, path);
+    let path = FileService.generateMigrationFile('add-new', '../migrations');
+    //await compareTables(sequelize_types, path);
 })();
