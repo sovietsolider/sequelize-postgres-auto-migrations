@@ -1,55 +1,45 @@
-import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull } from 'sequelize-typescript';
+import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, Default, HasOne } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
 import { compareTables, compareTablesAttributes } from './common/cmpFunctions';
 import { ArrayTypeModel, EnumTypeModel } from '../tests/testModels';
 import { FileService } from './services/file.service';
+import { DbService } from './services/db.service';
 
 @Table
-class Person extends Model {
-    @HasMany(() => Book, 'authorId')
-    writtenBooks!: Book[];
+class Team extends Model {
+  @Default('fd')
+  @Column
+  name!: string;
 
-    @HasMany(() => Book, 'proofreaderId')
-    proofedBooks!: Book[];
+  //@HasMany(() => Player)
+  //players!: Player[];
 }
 
 @Table
-class Book extends Model {
-    @ForeignKey(() => Person)
-    @Column
-    authorId!: number;
-
-    @Column(DataType.STRING(176))
-    name!: string;
-
-    @Column(DataType.ARRAY(DataType.ARRAY(DataType.ARRAY(DataType.STRING(70)))))
-    name_array!: string[][][];
-
-    @Column(DataType.ENUM("ONE", "TWO", "THREE",))
-    nameE!: string[]
-
-    @ForeignKey(() => Person)
-    @Column(DataType.SMALLINT)
-    proofreaderId!: number;
-
-    @BelongsTo(() => Person, 'authorId')
-    author!: Person;
-
-    @BelongsTo(() => Person, 'proofreaderId')
-    proofreader!: Person;
-}
-
-@Table({ schema: 'temp' })
 class Item extends Model {
-    @PrimaryKey
-    @AutoIncrement
-    @AllowNull(true)
-    @Column
-    id!: number;
+  @PrimaryKey
+  @AutoIncrement
+  @Column
+  name!: number;
+    
+  @HasMany(() => Player)
+  players!: Player[];
+}
 
-    @PrimaryKey
-    @Column
-    name!: string;
+@Table
+class Player extends Model {
+  @Column
+  name!: string;
+
+  @Column
+  num!: number;
+
+  @ForeignKey(() => Item)
+  @Column
+  teamId!: number;
+
+  @BelongsTo(() => Item)
+  team!: Item;
 }
 
 export const sequelize = new Sequelize({
@@ -58,7 +48,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Item, Book, Person],
+    models: [Player, Team, Item],
     define: {
         freezeTableName: true,
     },
@@ -77,7 +67,11 @@ export const sequelize_types = new Sequelize({
 });
 
 (async () => {
+    //console.log(sequelize.models.Item.getAttributes())
+    //console.log(await DbService.tableToModelInfo(sequelize, 'public', 'Team'))
     //await sequelize.sync({ force: true });
-    let path = FileService.generateMigrationFile('add-new', '../migrations');
-    //await compareTables(sequelize_types, path);
+    //console.log(sequelize.models.Item.getAttributes())
+    //console.log(JSON.stringify(await DbService.tableToModelInfo(sequelize, 'public', 'Book')))
+    let path = FileService.generateMigrationFile('add-new', '../migrations/');
+    await compareTables(sequelize, path);
 })();

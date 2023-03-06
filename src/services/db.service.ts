@@ -1,24 +1,31 @@
 import { Sequelize, Model, ModelCtor } from 'sequelize-typescript';
-import {  modelInfoType } from '../common/interfaces';
+import { modelInfoType, TableToModel } from '../common/interfaces';
 import { sqlToSeqTypes, SchemaTableColumnsConstraints, SchemaColumnType, SchemaColumns, SchemaTableColumnWithoutConstr } from '../common/interfaces';
 import { StringsGeneratorService } from './stringsGenerator.service';
 import { ModelService } from './model.service';
 
 export class DbService {
-    static addMissingTablesToDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): { upString: string; downString: string } {
+    static async addMissingTablesToDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
         for (const table of tables) {
             //console.log(schema_tables.indexOf(table));
             if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
-                //console.log('ADDING');
-                //console.log(table?.table_name);
+                console.log('ADDING');
+                console.log(table.table_name + ' ' + table.table_schema)
                 let curr_model = ModelService.getModelByTableName(sequelize, table?.table_name, table?.table_schema);
+                console.log(curr_model);
                 upString += StringsGeneratorService.getUpStringToAddTable(curr_model as ModelCtor<Model<any, any>> | undefined, table?.table_schema, table?.table_name);
                 downString += StringsGeneratorService.getUpStringToDeleteTable(table?.table_schema, table?.table_name);
             }
+            else {
+                let change_column_strings = await StringsGeneratorService.getStringsToChangeTable(sequelize, table.table_schema, table.table_name);
+                upString += change_column_strings.upString;
+                downString += change_column_strings.downString;
+            }
+
         }
-        return { upString, downString };
+        return Promise.resolve({ upString, downString });
     }
 
     static async deleteMissingTablesFromDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): Promise<{ upString: string; downString: string }> {
@@ -94,12 +101,12 @@ export class DbService {
                 max_length: column.character_maximum_length,
                 default_value: column.column_default,
                 dimension: column.attndims,
-                in_nullable: column.is_nullable,
-                constraint_name: null,
-                constraint_type: null,
-                foreign_table_name: null,
-                foreign_column_name: null,
-                foreign_table_schema: null,
+                is_nullable: column.is_nullable,
+                constraint_name: undefined,
+                constraint_type: undefined,
+                foreign_table_name: undefined,
+                foreign_column_name: undefined,
+                foreign_table_schema: undefined,
                 pg_max_length: column.atttypmod
             }
             for(const constraint of schema_table_columns_constraints) {
@@ -112,14 +119,71 @@ export class DbService {
                 }
                 else if(column.column_name === constraint.column_name) {
                     res[column.column_name].constraint_type = constraint.constraint_type;
-                    res[column.column_name].foreign_table_name = null;
-                    res[column.column_name].foreign_column_name = null;
-                    res[column.column_name].foreign_table_schema = null;
-                    res[column.column_name].constraint_name = null;
                 }
             }
         }
+        console.log(res)
         return Promise.resolve(res);
+    }
+
+    static async tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string) {
+        let table_info: SchemaColumns = await this.generateTableInfo(sequelize, table_schema, table_name);
+        let res: TableToModel = {};
+        for(const column in table_info) {
+            res[column] = {}
+            if(table_info[column].pg_type.match(/\"enum_\.*/)) {  //ENUM TYPE
+                let type_string = '';
+                type_string += `DataType.ENUM(`
+                let enum_values: {enum_range: Array<string>} = (((await sequelize.query(`SELECT enum_range(NULL::${table_info[column].pg_type});`)).at(0)) as Array<any>).at(0);
+                for(const val of enum_values.enum_range)
+                    type_string += `'${val}',`;
+                type_string += ')';
+                res[column].type = type_string;
+                console.log(type_string);
+            }
+            else if(table_info[column].column_type === 'ARRAY') { //ARRAY TYPE
+                let type_string = ''
+                let final_array_type: string = table_info[column].pg_type.replace('[]', '') as string;
+                //res[column].noDimensionType = sqlToSeqTypes[final_array_type];
+                for(let i=0; i<table_info[column].dimension; i++) 
+                    type_string += `DataType.ARRAY(`
+                if(sqlToSeqTypes[final_array_type] === 'DataType.STRING')
+                    type_string += `DataType.STRING(${table_info[column].pg_max_length})`;
+                else
+                    type_string += `${sqlToSeqTypes[final_array_type]}`;
+                for(let i=0; i<table_info[column].dimension; i++) {
+                    type_string += ')';
+                }
+                res[column].type = type_string;
+            }
+            else if(table_info[column].column_type === 'character varying') 
+                res[column].type = `DataType.STRING(${table_info[column].max_length})`
+            else
+                res[column].type = `${sqlToSeqTypes[table_info[column].column_type]}`;
+            if (table_info[column].default_value && table_info[column].default_value.match(/\bnextval.*/)) {
+                res[column].autoIncrement = true;
+            }
+            else if(table_info[column].default_value)
+                res[column].defaultValue = `${table_info[column].default_value}, `;
+            console.log(table_info[column])
+            if (table_info[column].is_nullable === 'YES') {
+                console.log("ALLOW NULL TRUE")
+                res[column].allowNull = undefined;
+            }
+            else 
+                res[column].allowNull = false;
+            if(table_info[column].constraint_type && table_info[column].constraint_type === 'PRIMARY KEY')               //CONSTRAINTS 
+                res[column].primaryKey = true;
+            if(table_info[column].constraint_type && table_info[column].constraint_type === 'FOREIGN KEY') {
+                res[column].reference = { model: { tableName: table_info[column].foreign_table_name, schema: table_info[column].foreign_table_schema}, key: table_info[column].foreign_column_name};
+                let fk_options = await DbService.getForeignKeyOptions(sequelize, table_info[column].constraint_name, table_info[column].table_schemas);
+                res[column].onUpdate = fk_options.update_rule
+                res[column].onDelete = fk_options.delete_rule
+            }
+        }
+        console.log("TABLE TO MODEL RESULTS")
+        console.log(res);
+        return Promise.resolve(res)
     }
 
     static getColumnsConstraintsSchemaInfo(table_schema: string, table_name: string) {

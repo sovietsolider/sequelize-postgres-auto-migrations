@@ -6,14 +6,12 @@ export class ModelService {
         for (const m in sequelize.models) {
             let tableName = sequelize.models[m].getTableName();
             if (typeof tableName === typeof {}) {
-                if ((sequelize.models[m].getTableName() as unknown as { tableName: string, tableSchema: string}).tableName === table_name 
-                && (sequelize.models[m].getTableName() as unknown as { tableName: string, tableSchema: string }).tableSchema === table_schema) {
-                    console.log('EQUALS!');
+                if ((sequelize.models[m].getTableName() as unknown as { tableName: string, schema: string}).tableName === table_name 
+                && (sequelize.models[m].getTableName() as unknown as { tableName: string, schema: string }).schema === table_schema) {
                     res = sequelize.models[m];
                 }
             } else {
                 if (sequelize.models[m].getTableName() === table_name) {
-                    console.log('EQUALS!');
                     res = sequelize.models[m];
                 }
             }

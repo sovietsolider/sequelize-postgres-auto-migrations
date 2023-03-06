@@ -1,10 +1,104 @@
 import { Sequelize, Model, ModelCtor } from 'sequelize-typescript';
-import { SchemaColumns, SchemaColumnType, sqlToSeqTypes } from '../common/interfaces';
+import { ModelAttributeColumnOptions } from 'sequelize'; 
+import { SchemaColumns, SchemaColumnType, sqlToSeqTypes, TableToModel, ModelAttribute } from '../common/interfaces';
 import { ModelService } from './model.service';
 import { DbService } from './db.service';
 export class StringsGeneratorService {
+    static async getStringsToChangeTable(sequelize: Sequelize, table_schema: string, table_name: string): Promise<{ upString: string, downString: string }> {
+        let up_string = '';
+        let down_string = '';
+        let tableInDb: TableToModel = await DbService.tableToModelInfo(sequelize, table_schema, table_name);
+        let tableInModel = (ModelService.getModelByTableName(sequelize, table_name, table_schema) as ModelCtor<Model<any, any>> | undefined)?.getAttributes();
+        for(const column in tableInModel) {
+            if (Object.keys(tableInDb).includes(column)) {
+                let columns_different = false;
+                let change_column_up_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {`;
+                let change_column_down_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {`;
+                if(ModelService.getTypeByModelAttr(tableInModel[column].type)!== tableInDb[column].type) {
+                    change_column_up_string += `type: ${ModelService.getTypeByModelAttr(tableInModel[column].type)},`
+                    change_column_down_string += `type: ${tableInDb[column].type},`
+                    columns_different = true;
+                }
+
+                console.log("DB allow null: "+tableInDb[column].allowNull);
+                console.log("Model allow null: "+tableInModel[column].allowNull);
+                console.log(tableInModel[column])
+                console.log(tableInDb[column]) 
+                if(tableInModel[column].allowNull !== tableInDb[column].allowNull) { //if ableInModel[column].allowNull
+                    change_column_up_string += `allowNull: ${tableInModel[column].allowNull},`
+                    change_column_down_string += `allowNull: ${tableInDb[column].allowNull},`
+                    columns_different = true;
+                }
+                if(tableInModel[column].autoIncrement !== tableInDb[column].autoIncrement) {
+                    change_column_up_string += `autoIncrement: ${tableInModel[column].autoIncrement},`
+                    change_column_down_string += `autoIncrement: ${tableInDb[column].autoIncrement},`
+                    columns_different = true;
+                }
+                if(tableInModel[column].defaultValue !== tableInDb[column].defaultValue) {
+                    if(typeof tableInModel[column].defaultValue === typeof '') {
+                        change_column_up_string += `defaultValue: '${tableInModel[column].defaultValue}',`
+                    }
+                    else
+                        change_column_up_string += `defaultValue: ${tableInModel[column].defaultValue},`
+                    if(tableInDb[column].defaultValue && (typeof tableInDb[column].defaultValue === typeof ''))
+                        change_column_down_string += `defaultValue: '${tableInDb[column].defaultValue}',`   
+                    else if(tableInDb[column].defaultValue)
+                        change_column_down_string += `defaultValue: ${tableInDb[column].defaultValue},`   
+                    else
+                        change_column_down_string += `defaultValue: undefined,`   
+                    columns_different = true;
+                }
+                if(tableInModel[column].primaryKey !== tableInDb[column].primaryKey) {
+                    change_column_up_string += `primaryKey: ${tableInModel[column].primaryKey},`
+                    change_column_down_string += `primaryKey: ${tableInDb[column].primaryKey},`
+                    columns_different = true;
+                }
+                let references_in_model = tableInModel[column].references as { model: { tableName: string, schema: string}| string, key: string};
+                let reference_in_db = tableInDb[column].reference as { model: { tableName: string, schema: string}, key: string}
+                console.log("CMP COLUMNS:")
+                console.log(tableInDb[column])
+                console.log(tableInModel[column])
+                if(references_in_model) {
+                    if(reference_in_db && (typeof(references_in_model.model) === typeof({})) 
+                    && ((references_in_model.model as { tableName: string, schema: string}).tableName != reference_in_db.model.tableName 
+                    || (references_in_model.model as { tableName: string, schema: string}).schema != reference_in_db.model.schema)) {
+                        change_column_up_string += `reference: { model: { tableName: ${(references_in_model.model as { tableName: string, schema: string}).tableName}, schema: ${(references_in_model.model as { tableName: string, schema: string}).schema}}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`
+                        change_column_down_string += `reference: { model: { tableName: ${reference_in_db.model.tableName}, schema: ${reference_in_db.model.schema}}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                        columns_different = true;
+                    }
+                    else if(reference_in_db && typeof(references_in_model.model) === typeof('') 
+                    && (references_in_model.model != reference_in_db.model.tableName) && (reference_in_db.model.schema === 'public')) {
+                        change_column_up_string += `reference: { model: { tableName: '${references_in_model.model}', schema: 'public'}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`
+                        change_column_down_string += `reference: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                        columns_different = true;
+                    }   
+                    else if(reference_in_db === undefined) {
+                        change_column_up_string += `reference: { model: { tableName: ${(references_in_model.model as { tableName: string, schema: string}).tableName}, schema: ${(references_in_model.model as { tableName: string, schema: string}).schema}}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`
+                        change_column_down_string += `reference: undefined,`
+                        columns_different = true;
+                    }
+
+                }
+                else if(reference_in_db !== undefined){ //also undefined
+                    change_column_up_string += `reference: undefined,`
+                    change_column_down_string += `reference: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                    columns_different = true;
+
+                }
+                change_column_up_string += '},);' 
+                change_column_down_string += '},);' 
+                if(columns_different) {
+                    up_string += change_column_up_string;   
+                    down_string += change_column_down_string;
+                }   
+            }
+        }
+        return Promise.resolve({ upString: up_string, downString: down_string });
+    }
+
+
     static getUpStringToAddTable(model: ModelCtor<Model<any, any>> | undefined, model_schema: string | undefined, table_name: string): string {
-        console.log('GENERATE STRING SCHEMA NAME');
+        //console.log('GENERATE STRING SCHEMA NAME');
         let description = model?.getAttributes();
         const attrs_to_except = ['type', 'Model', 'fieldName', '_modelAttribute', 'field', '_autoGenerated', 'values'];
         let res_string = `await queryInterface.createTable("${table_name}",{`;
@@ -37,69 +131,20 @@ export class StringsGeneratorService {
     }
     
     static async getDownStringToAddTable(sequelize: Sequelize, table_schema: string, table_name: string): Promise<string> {
-        console.log("GENERATED INFO")
-        let attributes: SchemaColumns = await DbService.generateTableInfo(sequelize, table_schema, table_name);
+        //console.log("GENERATED INFO")
         let res_string = `await queryInterface.createTable("${table_name}",{`;
+        let attributes = await DbService.tableToModelInfo(sequelize, table_schema, table_name);
         for(const column in attributes) {
-            let options: SchemaColumnType = attributes[column];
-            res_string += `${column}: {`
-            console.log('COLUMN!')
-            console.log(attributes[column])
-            ///type checking
-            res_string += 'type: '
-            if(options.pg_type.match(/\"enum_\.*/)) {  //ENUM TYPE
-                res_string += `DataType.ENUM(`
-                let enum_values: {enum_range: Array<string>} = (((await sequelize.query(`SELECT enum_range(NULL::${options.pg_type});`)).at(0)) as Array<any>).at(0);
-                for(const val of enum_values.enum_range)
-                    res_string += `'${val}',`;
-                res_string += ')';
-                res_string += ','
-                console.log(res_string);
-            }
-            else if(options.column_type === 'ARRAY') { //ARRAY TYPE
-                let final_array_type: string = options.pg_type.replace('[]', '') as string;
-                console.log("FINAL ARRAY TYPE")
-                console.log(final_array_type)
-                for(let i=0; i<options.dimension; i++) 
-                    res_string += `DataType.ARRAY(`
-                if(sqlToSeqTypes[final_array_type] === 'DataType.STRING')
-                    res_string += `DataType.STRING(${options.pg_max_length})`;
-                else
-                    res_string += `${sqlToSeqTypes[final_array_type]}`;
-                for(let i=0; i<options.dimension; i++) {
-                    res_string += ')';
-                }
-                res_string += ','
-            }
-            else if(options.column_type === 'character varying') 
-                res_string += `DataType.STRING(${options.max_length}),`
-            else
-                res_string += `${sqlToSeqTypes[options.column_type]},`;
-                ////
-            if (options.default_value && options.default_value.match(/\bnextval.*/)) {//AUTO INCREMENT 
-                res_string += `autoIncrement: true, `;
-                console.log("INCREMENT_MATCH")
-                console.log(options.default_value)}
-            else if(options.default_value)
-                res_string += `defaultValue: ${options.default_value}, `;
-            if (options.is_nullable === 'YES') 
-                res_string += 'allowNull: true, ';
-            else 
-                res_string += 'allowNull: false, ';
-            if(options.constraint_type && options.constraint_type === 'PRIMARY KEY')               //CONSTRAINTS 
-                res_string += 'primaryKey: true,'
-            else if(options.constraint_type && options.constraint_type === 'FOREIGN KEY') {
-                res_string += `references: { model: { tableName: '${options.foreign_table_name}', schema: '${options.foreign_table_schema}', key: '${options.foreign_table_name}'},`
-                let fk_options = await DbService.getForeignKeyOptions(sequelize, options.constraint_name, options.table_schemas);
-                console.log("FK OPTIONS")
-                console.log(fk_options)
-                res_string += `onUpdate: '${fk_options.update_rule}',`
-                res_string += `onDelete: '${fk_options.delete_rule}',`
-                res_string += '},'
-            }
-            res_string += '},'
+            let options: ModelAttribute = attributes[column];
+            res_string += `${column}: `
+            //console.log('COLUMN!')
+            //console.log(attributes[column])
+            res_string += `${JSON.stringify(options)}, `;
+            //console.log(res_string.match(/"\btype":"DataType.\b[^"]*"/g))
+            res_string = res_string.replace(/"\btype":"DataType.\b[^"]*"/g, `"type":${options.type}`);
         }
         res_string += `},{ transaction: t, schema: "${table_schema}"},);`;
+        
         return Promise.resolve(res_string);
     }
     

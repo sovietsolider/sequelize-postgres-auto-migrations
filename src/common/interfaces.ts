@@ -33,7 +33,7 @@ export interface SchemaColumnType{
     max_length: any,
     default_value: any,
     dimension: any,
-    in_nullable: any,
+    is_nullable: any,
     pg_type: any,
     pg_max_length: any,
     constraint_type: any,
@@ -96,6 +96,22 @@ export const sqlToSeqTypes:sqlToSeqTypesInterface = {
     citext: 'DataType.CITEXT',
     uuid: 'DataType.UUIDV1',
 };
+
+export interface TableToModel {
+    [key: string]: ModelAttribute
+}
+
+export interface ModelAttribute {
+    type?: string,
+    autoIncrement?: boolean,
+    defaultValue?: string | null,
+    allowNull?: boolean,
+    primaryKey?: boolean,
+    reference?: any,
+    onUpdate?: string | null,
+    onDelete?: string | null,
+    //noDimensionType?: string
+}
 
 export interface modelInfoType {
     table_name: string;
