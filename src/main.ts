@@ -11,6 +11,9 @@ class Team extends Model {
   @Column
   name!: string;
 
+  @Column
+  newAttribute!: number
+
   //@HasMany(() => Player)
   //players!: Player[];
 }
