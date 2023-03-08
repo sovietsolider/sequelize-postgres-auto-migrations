@@ -1,6 +1,6 @@
-import { Sequelize } from "sequelize-typescript";
-import { FileService } from "../services/file.service";
-import { compareTables } from "./cmpFunctions";
+import { Sequelize } from 'sequelize-typescript';
+import { FileService } from '../services/file.service';
+import { compareTables } from './cmpFunctions';
 export class AutoMigrations {
     seq: Sequelize;
     constructor(sequelize: Sequelize) {

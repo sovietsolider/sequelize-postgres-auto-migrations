@@ -5,12 +5,12 @@ export interface SchemaTableColumnWithoutConstr {
     table_name: string;
     column_name: string;
     data_type: string;
-    character_maximum_length: string|null;
-    column_default: any;
-    is_nullable: any,
-    attndims: any,
-    display_type: any,
-    atttypmod: any
+    character_maximum_length: string | null;
+    column_default: null|string;
+    is_nullable: string;
+    attndims: number;
+    display_type: string;
+    atttypmod: number;
 }
 
 export interface SchemaTableColumnsConstraints {
@@ -24,55 +24,55 @@ export interface SchemaTableColumnsConstraints {
     foreign_column_name: string;
 }
 
-export interface SchemaColumnType{
-    [index: string]: any,
-    table_schemas: any, 
-    table_name: any,
-    column_name: any,
-    column_type: any,
-    max_length: any,
-    default_value: any,
-    dimension: any,
-    is_nullable: any,
-    pg_type: any,
-    pg_max_length: any,
-    constraint_type: any,
-    foreign_table_name: any,
-    foreign_column_name: any,
-    foreign_table_schema: any,
-    constraint_name: any
+export interface SchemaColumnType {
+    [index: string]: any;
+    table_schemas: string;
+    table_name: string;
+    column_name: string;
+    column_type: string;
+    max_length: string|null;
+    default_value: any;
+    dimension: number;
+    is_nullable: string;
+    pg_type: string;
+    pg_max_length: number;
+    constraint_type: string|undefined;
+    foreign_table_name: string|undefined;
+    foreign_column_name: string|undefined;
+    foreign_table_schema: string|undefined;
+    constraint_name: string|undefined;
 }
 
 export interface SchemaColumns {
-    [key: string]: SchemaColumnType
+    [key: string]: SchemaColumnType;
 }
 
 interface sqlToSeqTypesInterface {
-    [key: string]: string,
-    bigint: string,
-    boolean: string,
-    character: string,
-    'character varying': string,
-    cidr: string,
-    date: string,
-    'double precision': string,
-    inet: string,
-    integer: string,
-    json: string,
-    jsonb: string,
-    macaddr: string,
-    real: string,
-    smallint: string,
-    text: string,
-    time: string,
-    'timestamp with zone': string,
-    'timestamp with time zone': string,
-    'timestamp without time zone': string
-    bitea: string,
-    citext: string,
-    uuid: string,
+    [key: string]: string;
+    bigint: string;
+    boolean: string;
+    character: string;
+    'character varying': string;
+    cidr: string;
+    date: string;
+    'double precision': string;
+    inet: string;
+    integer: string;
+    json: string;
+    jsonb: string;
+    macaddr: string;
+    real: string;
+    smallint: string;
+    text: string;
+    time: string;
+    'timestamp with zone': string;
+    'timestamp with time zone': string;
+    'timestamp without time zone': string;
+    bitea: string;
+    citext: string;
+    uuid: string;
 }
-export const sqlToSeqTypes:sqlToSeqTypesInterface = {
+export const sqlToSeqTypes: sqlToSeqTypesInterface = {
     bigint: 'DataType.BIGINT',
     boolean: 'DataType.BOOLEAN',
     character: 'DataType.CHAR',
@@ -98,18 +98,18 @@ export const sqlToSeqTypes:sqlToSeqTypesInterface = {
 };
 
 export interface TableToModel {
-    [key: string]: ModelAttribute
+    [key: string]: ModelAttribute;
 }
 
 export interface ModelAttribute {
-    type?: string,
-    autoIncrement?: boolean,
-    defaultValue?: string | null,
-    allowNull?: boolean,
-    primaryKey?: boolean,
-    reference?: any,
-    onUpdate?: string | null,
-    onDelete?: string | null,
+    type?: string;
+    autoIncrement?: boolean;
+    defaultValue?: string | null;
+    allowNull?: boolean;
+    primaryKey?: boolean;
+    reference?: any;
+    onUpdate?: string | null;
+    onDelete?: string | null;
     //noDimensionType?: string
 }
 
@@ -117,4 +117,3 @@ export interface modelInfoType {
     table_name: string;
     table_schema: string;
 }
-
