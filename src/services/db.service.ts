@@ -159,7 +159,7 @@ export class DbService {
             console.log(table_info[column]);
             if (table_info[column].is_nullable === 'YES') {
                 console.log('ALLOW NULL TRUE');
-                res[column].allowNull = undefined;
+                res[column].allowNull = true;
             } else res[column].allowNull = false;
             if (table_info[column].constraint_type && table_info[column].constraint_type === 'PRIMARY KEY')
                 //CONSTRAINTS

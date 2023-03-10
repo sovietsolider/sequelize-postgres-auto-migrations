@@ -1,6 +1,6 @@
 import { AutoMigrations } from "./src/common/auto-migrations";
 import { Sequelize } from "sequelize-typescript";
-import { Item, Book, Person } from "./tests/testModels";
+import { Item, Book, Person } from "./tests/testModels/model1";
 export const sequelize = new Sequelize({
     database: 'test',
     dialect: 'postgres',

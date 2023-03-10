@@ -32,6 +32,8 @@ export class StringsGeneratorService {
                 if(tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
                     model_allow_null = false;
                 }
+                if(model_allow_null === undefined)
+                    model_allow_null = true;
                 if (model_allow_null !== tableInDb[real_column_name].allowNull) {
                     change_column_up_string += `allowNull: ${model_allow_null},`;
                     change_column_down_string += `allowNull: ${tableInDb[real_column_name].allowNull},`;
@@ -88,8 +90,8 @@ export class StringsGeneratorService {
                     change_column_down_string += `reference: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
                     columns_different = true;
                 }
-                change_column_up_string += '},);';
-                change_column_down_string += '},);';
+                change_column_up_string += '},{ transaction: t });';
+                change_column_down_string += '},{ transaction: t});';
                 if (columns_different) {
                     up_string += change_column_up_string;
                     down_string += change_column_down_string;
@@ -99,12 +101,14 @@ export class StringsGeneratorService {
                 up_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 console.log('ADDING COLUMN');
                 up_string += ModelService.getModelColumnDescriptionAsString(tableInModel, column);
-                up_string += `);`;
+                up_string += `{ transaction: t });`;
                 down_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {transaction: t});`;
             }
         }
         //column is missing in Model -> delete
         for (const column in tableInDb) {
+            console.log("DELETING CHECK");
+            console.log(column);
             if (!model_columns_names.includes(column)) {
                 console.log('DELETING COLUMN');
                 console.log(model_columns_names);
