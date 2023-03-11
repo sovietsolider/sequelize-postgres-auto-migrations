@@ -6,8 +6,6 @@ import { modelInfoType } from './interfaces';
 import { FileService } from '../services/file.service';
 import { StringsGeneratorService } from '../services/stringsGenerator.service';
 
-export async function compareTablesAttributes(sequelize: Sequelize, table_schema: string, table_name: string) {}
-
 export async function compareTables(sequelize: Sequelize, pathToMigrationFile: string) {
     const schema_info_tables = await sequelize.query("SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema!='pg_catalog' AND table_schema!='information_schema'");
     const schema_tables: Array<any> = schema_info_tables.at(0) as Array<any>;

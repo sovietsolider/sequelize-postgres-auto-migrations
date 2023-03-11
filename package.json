@@ -9,7 +9,8 @@
     "@types/validator": "^13.7.12",
     "jest": "^29.4.3",
     "prettier": "^2.8.4",
-    "ts-jest": "^29.0.5"
+    "ts-jest": "^29.0.5",
+    "typedoc": "^0.23.26"
   },
   "dependencies": {
     "pg": "^8.9.0",

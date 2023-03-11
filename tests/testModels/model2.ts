@@ -7,7 +7,7 @@ class Model2 extends Model {
     model2Col1!: string;
 
     @Column(DataType.ENUM("5","2","1"))
-    model2Col2!: string[]
+    model2Col2!: number[]
 
     @ForeignKey(() => Model1)
     model2Fk!: number

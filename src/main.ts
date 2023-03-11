@@ -1,6 +1,6 @@
 import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, Default, HasOne } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
-import { compareTables, compareTablesAttributes } from './common/cmpFunctions';
+import { compareTables } from './common/cmpFunctions';
 //import { ArrayTypeModel, EnumTypeModel } from '../tests/testModels';
 import { FileService } from './services/file.service';
 import { DbService } from './services/db.service';
