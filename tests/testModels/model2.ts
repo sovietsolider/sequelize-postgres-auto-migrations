@@ -3,13 +3,14 @@ import { Model3 } from './model3';
 
 @Table
 class Model2 extends Model {
-    @Column
+    @Column(DataType.STRING(101))
     model2Col1!: string;
 
-    @Column(DataType.ENUM("5","5","5"))
+    @Column(DataType.ENUM("one","two","three"))
     model2Col2!: number[]
-
-    //@ForeignKey(() => Model3)
+    
+    @AllowNull(true)
+    @ForeignKey(() => Model3)
     @Column
     model2Fk!: number
 }

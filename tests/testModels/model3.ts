@@ -6,8 +6,8 @@ class Model3 extends Model {
     @Column
     idd!: number;
 
-    //@HasOne(() => Model2)
-    //model2!: Model2
+    @HasOne(() => Model2)
+    model2!: Model2
 }
 
 export { Model3 }

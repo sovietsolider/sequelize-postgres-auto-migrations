@@ -3,6 +3,7 @@ import { modelInfoType, TableToModel } from '../common/interfaces';
 import { sqlToSeqTypes, SchemaTableColumnsConstraints, SchemaColumnType, SchemaColumns, SchemaTableColumnWithoutConstr } from '../common/interfaces';
 import { StringsGeneratorService } from './stringsGenerator.service';
 import { ModelService } from './model.service';
+const pg_magic_round = 4;
 
 export class DbService {
     static async addMissingTablesToDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): Promise<{ upString: string; downString: string }> {
@@ -130,6 +131,8 @@ export class DbService {
         let table_info: SchemaColumns = await this.generateTableInfo(sequelize, table_schema, table_name);
         let res: TableToModel = {};
         for (const column in table_info) {
+            console.log("TABLE COLUMN TYPE");
+            console.log(table_info[column])
             res[column] = {};
             if (table_info[column].pg_type.match(/\"enum_\.*/)) {
                 //ENUM TYPE
@@ -146,7 +149,8 @@ export class DbService {
                 let final_array_type: string = table_info[column].pg_type.replace('[]', '') as string;
                 //res[column].noDimensionType = sqlToSeqTypes[final_array_type];
                 for (let i = 0; i < table_info[column].dimension; i++) type_string += `DataType.ARRAY(`;
-                if (sqlToSeqTypes[final_array_type] === 'DataType.STRING') type_string += `DataType.STRING(${table_info[column].pg_max_length})`;
+                
+                if (sqlToSeqTypes[final_array_type] === 'DataType.STRING') type_string += `DataType.STRING(${table_info[column].pg_max_length-pg_magic_round})`;
                 else type_string += `${sqlToSeqTypes[final_array_type]}`;
                 for (let i = 0; i < table_info[column].dimension; i++) {
                     type_string += ')';

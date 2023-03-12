@@ -26,15 +26,19 @@ export class ModelService {
             let type_length = current_type._length;
 
             res_string += `DataType.STRING(${type_length})`;
-        } else if (type_name !== 'ARRAY' && type_name !== 'ENUM') res_string += `DataType.${type_name}`;
-        else if (type_name === 'ARRAY') {
+        } 
+        else if (type_name !== 'ARRAY' && type_name !== 'ENUM' && type_name !== 'DATEONLY') 
+            res_string += `DataType.${type_name}`;
+        else if (type_name === 'ARRAY') 
             res_string += `DataType.ARRAY(${this.getTypeByModelAttr(current_type.type, res_string)})`;
-        } else if (type_name === 'ENUM') {
+        else if(type_name === 'DATEONLY')
+            res_string += `DataType.DATE`;
+        else if (type_name === 'ENUM') {
             //console.log(current_type.values)
             res_string += `DataType.ENUM(`;
             for (const [i, element] of current_type.values.entries()) {
                 if (i === current_type.values.length - 1) {
-                    res_string += `'${element}')`;
+                    res_string += `'${element}',)`;
                     continue;
                 }
                 res_string += `'${element}',`;

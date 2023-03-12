@@ -68,9 +68,10 @@ interface sqlToSeqTypesInterface {
     'timestamp with zone': string;
     'timestamp with time zone': string;
     'timestamp without time zone': string;
-    bitea: string;
+    bytea: string;
     citext: string;
     uuid: string;
+    numeric: string;
 }
 export const sqlToSeqTypes: sqlToSeqTypesInterface = {
     bigint: 'DataType.BIGINT',
@@ -92,9 +93,10 @@ export const sqlToSeqTypes: sqlToSeqTypesInterface = {
     'timestamp with zone': 'DataType.DATE',
     'timestamp with time zone': 'DataType.DATE',
     'timestamp without time zone': 'DataType.DATE',
-    bitea: 'DataType.BLOB',
+    bytea: 'DataType.BLOB',
     citext: 'DataType.CITEXT',
     uuid: 'DataType.UUIDV1',
+    numeric: 'DataType.DECIMAL'
 };
 
 export interface TableToModel {

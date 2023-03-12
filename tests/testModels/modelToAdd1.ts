@@ -50,4 +50,12 @@ export interface BookURL {
     @Column
     db!: string;
   }
+
+@Table
+export class ModelToAdd extends Model {
+  @Column({field: "ModelToAdd1Col1"})
+  nn!: number
+}
+
+
   

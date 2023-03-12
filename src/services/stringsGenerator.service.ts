@@ -17,7 +17,8 @@ export class StringsGeneratorService {
                 let change_column_up_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 let change_column_down_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 console.log('ERROR COLUMN ' + tableInModel[column].field);
-                console.log(Object.keys(tableInDb));
+                console.log(ModelService.getTypeByModelAttr(tableInModel[column].type));
+                console.log(tableInDb[real_column_name].type);
                 if (ModelService.getTypeByModelAttr(tableInModel[column].type) !== tableInDb[real_column_name].type) {
                     change_column_up_string += `type: ${ModelService.getTypeByModelAttr(tableInModel[column].type)},`;
                     change_column_down_string += `type: ${tableInDb[real_column_name].type},`;
