@@ -117,3 +117,8 @@ export interface modelInfoType {
     table_name: string;
     table_schema: string;
 }
+
+export interface comparisonOptions {
+    enableCascadeDeleting: boolean,
+    replaceTableWhenAttributesMatch: boolean
+}

@@ -32,12 +32,14 @@ export class DbService {
         console.log(schema_tables);
         console.log(tables);
         for (const schema_table of schema_tables) {
-            if (!tables.find((element) => element.table_name === schema_table.table_name && element.table_schema === schema_table.table_schema)) {
-                console.log('DELETING');
-                //upString
-                upString += StringsGeneratorService.getUpStringToDeleteTable(schema_table.table_schema, schema_table.table_name);
-                //downString
-                downString += await StringsGeneratorService.getDownStringToAddTable(sequelize, schema_table.table_schema, schema_table.table_name);
+            if(schema_table.table_name != "SequelizeMeta") {
+                if (!tables.find((element) => element.table_name === schema_table.table_name && element.table_schema === schema_table.table_schema)) {
+                    console.log('DELETING');
+                    //upString
+                    upString += StringsGeneratorService.getUpStringToDeleteTable(schema_table.table_schema, schema_table.table_name);
+                    //downString
+                    downString += await StringsGeneratorService.getDownStringToAddTable(sequelize, schema_table.table_schema, schema_table.table_name);
+                }
             }
         }
         return Promise.resolve({ upString, downString });
@@ -161,8 +163,7 @@ export class DbService {
                 console.log('ALLOW NULL TRUE');
                 res[column].allowNull = true;
             } else res[column].allowNull = false;
-            if (table_info[column].constraint_type && table_info[column].constraint_type === 'PRIMARY KEY')
-                //CONSTRAINTS
+            if (table_info[column].constraint_type && table_info[column].constraint_type === 'PRIMARY KEY') //CONSTRAINTS
                 res[column].primaryKey = true;
             if (table_info[column].constraint_type && table_info[column].constraint_type === 'FOREIGN KEY') {
                 res[column].reference = { model: { tableName: table_info[column].foreign_table_name, schema: table_info[column].foreign_table_schema }, key: table_info[column].foreign_column_name };

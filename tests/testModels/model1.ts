@@ -2,8 +2,9 @@ import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, Bel
 import {Model2} from "./model2"
 @Table
 class Model1 extends Model {
+    /*
     @Column(DataType.STRING)
-    model1Col1!: string
+    model1Col1!: string*/
 
     @Column(DataType.ARRAY(DataType.STRING(175)))
     model1Col2!: number
@@ -11,8 +12,9 @@ class Model1 extends Model {
     @Column(DataType.ARRAY(DataType.INTEGER))
     model1Col3!: number[]
 
-    @HasOne(() => Model2)
-    model2!: Model2
+    @AllowNull(false)
+    @Column({field: 'new_model1_field'})
+    model1Col4!: string
 }
 
 

@@ -1,15 +1,16 @@
 import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, HasOne } from 'sequelize-typescript';
-import { Model1 } from './model1';
+import { Model3 } from './model3';
 
 @Table
 class Model2 extends Model {
     @Column
     model2Col1!: string;
 
-    @Column(DataType.ENUM("5","2","1"))
+    @Column(DataType.ENUM("5","5","5"))
     model2Col2!: number[]
 
-    @ForeignKey(() => Model1)
+    //@ForeignKey(() => Model3)
+    @Column
     model2Fk!: number
 }
 

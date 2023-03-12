@@ -15,4 +15,4 @@ export const sequelize = new Sequelize({
     },
 });
 const auto_migrations = new AutoMigrations(sequelize);
-auto_migrations.generateMigration('new', './migrations/')
+auto_migrations.generateMigration('new', '/home/anatoliy/WORK/sequelize-migrations/migrations')
