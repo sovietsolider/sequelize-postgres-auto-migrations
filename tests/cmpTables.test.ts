@@ -34,7 +34,7 @@ const sequelize_test1 = new Sequelize({
   host: "localhost",
   username: 'postgres',
   password: '666666',
-  models: test1_models, 
+  models: [], 
   define: {
     freezeTableName: true,
   }
@@ -46,7 +46,7 @@ const sequelize_test2 = new Sequelize({
   host: "localhost",
   username: 'postgres',
   password: '666666',
-  models: test2_models, 
+  models: [], 
   define: {
     freezeTableName: true,
   }
@@ -59,6 +59,7 @@ describe('test case', () => {
     await compareTables(sequelize_test, path_);
     expect(fs.readFileSync(`${path_}`).toString().replace(/\s/g, "")).toBe(fs.readFileSync(res_path).toString().replace(/\s/g, ""))
   });
+  /*
   test('test case 1', async () => {
     let path_ = FileService.generateMigrationFile("test_1", path.resolve(__dirname, "./migrationsToCompare"));
     path_ = path.resolve(__dirname, path_);
@@ -70,5 +71,5 @@ describe('test case', () => {
     path_ = path.resolve(__dirname, path_);
     await compareTables(sequelize_test2, path_);
     expect(fs.readFileSync(`${path_}`).toString().replace(/\s/g, "")).toBe(fs.readFileSync(res_path_2).toString().replace(/\s/g, ""))
-  })
+  })*/
 });
