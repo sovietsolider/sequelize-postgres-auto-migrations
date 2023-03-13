@@ -1,12 +1,12 @@
-import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, HasOne } from 'sequelize-typescript';
+import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, HasOne, Unique } from 'sequelize-typescript';
 import {Model2} from "./model2"
 @Table
 class Model1 extends Model {
     @PrimaryKey
-    @Column(DataType.ARRAY(DataType.STRING(175)))
+    @Column(DataType.INTEGER)
     model1Col2!: number
 
-    @Column(DataType.ARRAY(DataType.ARRAY(DataType.BOOLEAN)))
+    @Column(DataType.ARRAY(DataType.ARRAY(DataType.STRING)))
     model1Col3!: boolean[][]
 
     @AllowNull(true)

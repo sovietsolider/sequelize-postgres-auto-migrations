@@ -137,7 +137,7 @@ export class DbService {
             if (table_info[column].pg_type.match(/\"enum_\.*/)) {
                 //ENUM TYPE
                 let type_string = '';
-                type_string += `DataType.ENUM(`;
+                type_string += `Sequelize.ENUM(`;
                 let enum_values: { enum_range: Array<string> } = ((await sequelize.query(`SELECT enum_range(NULL::${table_info[column].pg_type});`)).at(0) as Array<any>).at(0);
                 for (const val of enum_values.enum_range) type_string += `'${val}',`;
                 type_string += ')';
@@ -148,15 +148,15 @@ export class DbService {
                 let type_string = '';
                 let final_array_type: string = table_info[column].pg_type.replace('[]', '') as string;
                 //res[column].noDimensionType = sqlToSeqTypes[final_array_type];
-                for (let i = 0; i < table_info[column].dimension; i++) type_string += `DataType.ARRAY(`;
+                for (let i = 0; i < table_info[column].dimension; i++) type_string += `Sequelize.ARRAY(`;
                 
-                if (sqlToSeqTypes[final_array_type] === 'DataType.STRING') type_string += `DataType.STRING(${table_info[column].pg_max_length-pg_magic_round})`;
+                if (sqlToSeqTypes[final_array_type] === 'Sequelize.STRING') type_string += `Sequelize.STRING(${table_info[column].pg_max_length-pg_magic_round})`;
                 else type_string += `${sqlToSeqTypes[final_array_type]}`;
                 for (let i = 0; i < table_info[column].dimension; i++) {
                     type_string += ')';
                 }
                 res[column].type = type_string;
-            } else if (table_info[column].column_type === 'character varying') res[column].type = `DataType.STRING(${table_info[column].max_length})`;
+            } else if (table_info[column].column_type === 'character varying') res[column].type = `Sequelize.STRING(${table_info[column].max_length})`;
             else res[column].type = `${sqlToSeqTypes[table_info[column].column_type]}`;
             if (table_info[column].default_value && table_info[column].default_value.match(/\bnextval.*/)) {
                 res[column].autoIncrement = true;

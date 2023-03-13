@@ -19,9 +19,9 @@ export class StringsGeneratorService {
                 console.log('ERROR COLUMN ' + tableInModel[column].field);
                 console.log(ModelService.getTypeByModelAttr(tableInModel[column].type));
                 console.log(tableInDb[real_column_name].type);
-                if (ModelService.getTypeByModelAttr(tableInModel[column].type) !== tableInDb[real_column_name].type) {
-                    change_column_up_string += `type: ${ModelService.getTypeByModelAttr(tableInModel[column].type)},`;
-                    change_column_down_string += `type: ${tableInDb[real_column_name].type},`;
+                change_column_up_string += `type: ${ModelService.getTypeByModelAttr(tableInModel[column].type)},`;
+                change_column_down_string += `type: ${tableInDb[real_column_name].type},`;
+                if (ModelService.getTypeByModelAttr(tableInModel[column].type) !== tableInDb[real_column_name].type) { 
                     columns_different = true;
                 }
 
@@ -69,26 +69,26 @@ export class StringsGeneratorService {
                         typeof references_in_model.model === typeof {} &&
                         ((references_in_model.model as { tableName: string; schema: string }).tableName != reference_in_db.model.tableName || (references_in_model.model as { tableName: string; schema: string }).schema != reference_in_db.model.schema)
                     ) {
-                        change_column_up_string += `reference: { model: { tableName: ${(references_in_model.model as { tableName: string; schema: string }).tableName}, schema: ${
+                        change_column_up_string += `references: { model: { tableName: ${(references_in_model.model as { tableName: string; schema: string }).tableName}, schema: ${
                             (references_in_model.model as { tableName: string; schema: string }).schema
                         }}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
-                        change_column_down_string += `reference: { model: { tableName: ${reference_in_db.model.tableName}, schema: ${reference_in_db.model.schema}}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                        change_column_down_string += `references: { model: { tableName: ${reference_in_db.model.tableName}, schema: ${reference_in_db.model.schema}}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
                         columns_different = true;
                     } else if (reference_in_db && typeof references_in_model.model === typeof '' && references_in_model.model != reference_in_db.model.tableName && reference_in_db.model.schema === 'public') {
-                        change_column_up_string += `reference: { model: { tableName: '${references_in_model.model}', schema: 'public'}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
-                        change_column_down_string += `reference: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                        change_column_up_string += `references: { model: { tableName: '${references_in_model.model}', schema: 'public'}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
+                        change_column_down_string += `references: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
                         columns_different = true;
                     } else if (reference_in_db === undefined) {
-                        change_column_up_string += `reference: { model: { tableName: ${(references_in_model.model as { tableName: string; schema: string }).tableName}, schema: ${
+                        change_column_up_string += `references: { model: { tableName: ${(references_in_model.model as { tableName: string; schema: string }).tableName}, schema: ${
                             (references_in_model.model as { tableName: string; schema: string }).schema
                         }}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
-                        change_column_down_string += `reference: undefined,`;
+                        change_column_down_string += `references: undefined,`;
                         columns_different = true;
                     }
                 } else if (reference_in_db !== undefined) {
                     //also undefined
-                    change_column_up_string += `reference: undefined,`;
-                    change_column_down_string += `reference: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                    change_column_up_string += `references: undefined,`;
+                    change_column_down_string += `references: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
                     columns_different = true;
                 }
                 change_column_up_string += '},{ transaction: t });';
@@ -120,7 +120,7 @@ export class StringsGeneratorService {
                     console.log(tableInDb[column][column_attr as keyof object]);
                     down_string += `${column_attr}: ${tableInDb[column][column_attr as keyof object]},`;
                 }
-                down_string += '},);';
+                down_string += '},{transaction: t});';
             }
         }
         return Promise.resolve({ upString: up_string, downString: down_string });
@@ -129,7 +129,6 @@ export class StringsGeneratorService {
     static getUpStringToAddTable(model: ModelCtor<Model<any, any>> | undefined, model_schema: string | undefined, table_name: string): string {
         //console.log('GENERATE STRING SCHEMA NAME');
         let description = model?.getAttributes();
-        const attrs_to_except = ['type', 'Model', 'fieldName', '_modelAttribute', '_autoGenerated', 'values'];
         let res_string = `await queryInterface.createTable("${table_name}",{`;
         res_string += ModelService.getModelColumnsAsString(description);
         res_string += `},{ transaction: t, schema: "${model_schema}"},);`;
@@ -147,7 +146,7 @@ export class StringsGeneratorService {
             //console.log(attributes[column])
             res_string += `${JSON.stringify(options)}, `;
             //console.log(res_string.match(/"\btype":"DataType.\b[^"]*"/g))
-            res_string = res_string.replace(/"\btype":"DataType.\b[^"]*"/g, `"type":${options.type}`);
+            res_string = res_string.replace(/"\btype":"Sequelize.\b[^"]*"/g, `"type":${options.type}`);
         }
         res_string += `},{ transaction: t, schema: "${table_schema}"},);`;
 
