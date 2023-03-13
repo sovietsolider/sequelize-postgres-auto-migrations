@@ -34,7 +34,9 @@ export interface SchemaColumnType {
     is_nullable: string;
     pg_type: string;
     pg_max_length: number;
-    constraint_name: string| undefined;
+    fk_constraint_name: string| undefined;
+    pk_constraint_name: string| undefined;
+    unique_constraint_name: string| undefined;
     foreign_key: boolean|undefined;
     foreign_table_name: string|undefined;
     foreign_column_name: string|undefined;
@@ -113,7 +115,11 @@ export interface ModelAttribute {
     reference?: any;
     onUpdate?: string | null;
     onDelete?: string | null;
-    unique?: boolean
+    unique?: boolean,
+    foreignKey?: boolean,
+    pk_name?: string,
+    fk_name?: string,
+    unique_name?: string
     //noDimensionType?: string
 }
 

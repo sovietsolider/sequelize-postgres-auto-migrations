@@ -4,10 +4,10 @@ import { Model2 } from './model2';
 @Table
 class Model3 extends Model {
     @Column
-    idd!: number;
+    model3Col1!: string;
 
-    @HasOne(() => Model2)
-    model2!: Model2
+    /*@HasOne(() => Model2)
+    fk2!: Model2*/
 }
 
 export { Model3 }

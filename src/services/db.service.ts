@@ -93,7 +93,9 @@ export class DbService {
                 default_value: column.column_default,
                 dimension: column.attndims,
                 is_nullable: column.is_nullable,
-                constraint_name: undefined,
+                fk_constraint_name: undefined,
+                pk_constraint_name: undefined,
+                unique_constraint_name: undefined,
                 foreign_key: undefined,
                 foreign_table_name: undefined,
                 foreign_column_name: undefined,
@@ -103,19 +105,20 @@ export class DbService {
                 unique: undefined
             };
             for (const constraint of schema_table_columns_constraints) {
-                console.log(constraint)
                 if (column.column_name === constraint.column_name && constraint.constraint_type === 'FOREIGN KEY') {
                     res[column.column_name].foreign_key = true;
                     res[column.column_name].foreign_table_name = constraint.foreign_table_name;
                     res[column.column_name].foreign_column_name = constraint.foreign_column_name;
                     res[column.column_name].foreign_table_schema = constraint.foreign_table_schema;
-                    res[column.column_name].constraint_name = constraint.constraint_name;
+                    res[column.column_name].fk_constraint_name = constraint.constraint_name;
                 } 
                 if (column.column_name === constraint.column_name && constraint.constraint_type === 'PRIMARY KEY') {
                     res[column.column_name].primary_key = true;
+                    res[column.column_name].pk_constraint_name = constraint.constraint_name;
                 }
                 if(column.column_name === constraint.column_name && constraint.constraint_type === 'UNIQUE') {
                     res[column.column_name].unique = true;
+                    res[column.column_name].unique_constraint_name = constraint.constraint_name;
                 }
             }
         }
@@ -157,11 +160,13 @@ export class DbService {
             if (table_info[column].is_nullable === 'YES') {
                 res[column].allowNull = true;
             } else res[column].allowNull = false;
-            if (table_info[column].primary_key === true) //CONSTRAINTS
+            if (table_info[column].primary_key === true) //CONSTRAINTS 
                 res[column].primaryKey = true;
             if (table_info[column].foreign_key === true) {
+                res[column].foreignKey = true;
+                res[column].fk_name = table_info[column].fk_constraint_name;
                 res[column].reference = { model: { tableName: table_info[column].foreign_table_name, schema: table_info[column].foreign_table_schema }, key: table_info[column].foreign_column_name };
-                let fk_options = await DbService.getForeignKeyOptions(sequelize, table_info[column].constraint_name as string, table_info[column].table_schemas);
+                let fk_options = await DbService.getForeignKeyOptions(sequelize, table_info[column].fk_constraint_name as string, table_info[column].table_schemas);
                 res[column].onUpdate = fk_options.update_rule;
                 res[column].onDelete = fk_options.delete_rule;
             }

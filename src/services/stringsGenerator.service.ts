@@ -43,52 +43,54 @@ export class StringsGeneratorService {
 
                     columns_different = true;
                 }
+                /*
                 if (tableInModel[column].primaryKey !== tableInDb[real_column_name].primaryKey) {
                     change_column_up_string += `primaryKey: ${tableInModel[column].primaryKey},`;
                     change_column_down_string += `primaryKey: ${tableInDb[real_column_name].primaryKey},`;
                     columns_different = true;
-                }
-                if (tableInModel[column].unique !== tableInDb[real_column_name].unique) {
-                    change_column_up_string += `unique: ${tableInModel[column].unique},`;
-                    change_column_down_string += `unique: ${tableInDb[real_column_name].unique},`;
-                    columns_different = true;
-                }
-                let references_in_model = tableInModel[column].references as { model: { tableName: string; schema: string } | string; key: string };
-                let reference_in_db = tableInDb[real_column_name].reference as { model: { tableName: string; schema: string }; key: string };
-                if (references_in_model) {
-                    if (
-                        reference_in_db &&
-                        typeof references_in_model.model === typeof {} &&
-                        ((references_in_model.model as { tableName: string; schema: string }).tableName != reference_in_db.model.tableName || (references_in_model.model as { tableName: string; schema: string }).schema != reference_in_db.model.schema)
-                    ) {
-                        change_column_up_string += `references: { model: { tableName: ${(references_in_model.model as { tableName: string; schema: string }).tableName}, schema: ${
-                            (references_in_model.model as { tableName: string; schema: string }).schema
-                        }}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
-                        change_column_down_string += `references: { model: { tableName: ${reference_in_db.model.tableName}, schema: ${reference_in_db.model.schema}}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
-                        columns_different = true;
-                    } else if (reference_in_db && typeof references_in_model.model === typeof '' && references_in_model.model != reference_in_db.model.tableName && reference_in_db.model.schema === 'public') {
-                        change_column_up_string += `references: { model: { tableName: '${references_in_model.model}', schema: 'public'}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
-                        change_column_down_string += `references: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
-                        columns_different = true;
-                    } else if (reference_in_db === undefined) {
-                        change_column_up_string += `references: { model: { tableName: ${(references_in_model.model as { tableName: string; schema: string }).tableName}, schema: ${
-                            (references_in_model.model as { tableName: string; schema: string }).schema
-                        }}, key: '${references_in_model.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete}',`;
-                        change_column_down_string += `references: undefined,`;
-                        columns_different = true;
+                }*/
+                let constraints_up_string = '';
+                if (tableInModel[column].unique !== tableInDb[real_column_name].unique) { //UNIQUE
+                    if(tableInModel[column].unique === undefined || tableInModel[column].unique === false) { //добавить .name к unique
+                        constraints_up_string +=  `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[real_column_name].unique_name}');`;
                     }
-                } else if (reference_in_db !== undefined) {
-                    //also undefined
-                    change_column_up_string += `references: undefined,`;
-                    change_column_down_string += `references: { model: { tableName: '${reference_in_db.model.tableName}', schema: '${reference_in_db.model.schema}'}, key: '${reference_in_db.key}'}, onUpdate: '${tableInDb[column].onUpdate}', onDelete: '${tableInDb[column].onDelete}',`;
+                    else 
+                        constraints_up_string += `await queryInterface.addConstraint({tableName: '${table_name}, schema: '${table_schema}'}, { type: 'UNIQUE'});`;
                     columns_different = true;
                 }
-                change_column_up_string += '},{ transaction: t });';
-                change_column_down_string += '},{ transaction: t});';
-                if (columns_different) {
-                    up_string += change_column_up_string;
-                    down_string += change_column_down_string;
+                if (tableInModel[column].primaryKey !== tableInDb[real_column_name].primaryKey) { //PRIMTARY KEY
+                    if(tableInModel[column].primaryKey === undefined || tableInModel[column].primaryKey === false) { 
+                        constraints_up_string +=  `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[real_column_name].pk_name}');`;
+                    }
+                    else 
+                        constraints_up_string += `await queryInterface.addConstraint({tableName: '${table_name}, schema: '${table_schema}'}, { type: 'PRIMARY KEY'});`;
+                    columns_different = true;
                 }
+                if (tableInModel[column].references === undefined && tableInDb[real_column_name].foreignKey === true) { //FOREIGN KEY
+                    constraints_up_string +=  `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[real_column_name].fk_name}');`;
+                }
+                else if(tableInModel[column].references !== undefined && tableInDb[real_column_name].foreignKey === undefined) {
+                    let model_references = this.getModelReference(tableInModel[column].references as { model: string | { tableName: string; schema: string; }; key: string; });
+                    let table_references = tableInDb[real_column_name].reference;
+                    constraints_up_string +=  `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', references: { table: { tableName: '${model_references.model.tableName}', schema: '${
+                        model_references.model.schema}'}, field: '${model_references.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete},'});`;
+                }
+                else if(tableInModel[column].references !== undefined && tableInDb[real_column_name].foreignKey === true) {
+                    //// add here
+                    let model_references = this.getModelReference(tableInModel[column].references as { model: string | { tableName: string; schema: string; }; key: string; });
+                    let table_references = tableInDb[real_column_name].reference;
+                    console.log("REFERENCES ARE DIFFERENT")
+                    console.log(model_references);
+                    console.log(table_references);
+                    if(JSON.stringify(model_references) !== JSON.stringify(table_references)) {
+                        constraints_up_string +=  `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[real_column_name].fk_name}');`;
+                        constraints_up_string +=  `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', references: { table: { tableName: '${model_references.model.tableName}'}, schema: '${
+                            model_references.model.schema}'}, field: '${model_references.key}'}, onUpdate: '${tableInModel[column].onUpdate}', onDelete: '${tableInModel[column].onDelete},'});`;                    
+                    }
+                    
+                }
+                if(constraints_up_string !== '')
+                    up_string += constraints_up_string;
             } else {
                 //column is missing in Db -> add
                 up_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
@@ -109,6 +111,19 @@ export class StringsGeneratorService {
             }
         }
         return Promise.resolve({ upString: up_string, downString: down_string });
+    }
+
+    static getModelReference(model_references: {model: {tableName: string; schema: string;} | string; key: string;}){
+        let res: any = {};
+        if(typeof model_references.model === typeof {}) {
+            res.model = model_references.model as {tableName: string; schema: string;};
+            res.key = model_references.key;
+        }
+        else if (typeof model_references.model === typeof '') {
+            res.model = { tableName: model_references.model as string, schema: 'public'};
+            res.key = model_references.key
+        }
+        return res as { model: { tableName:string, schema:string}, key: string};
     }
 
     static getUpStringToAddTable(model: ModelCtor<Model<any, any>> | undefined, model_schema: string | undefined, table_name: string): string {
