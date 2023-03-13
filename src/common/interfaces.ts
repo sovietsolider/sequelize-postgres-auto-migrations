@@ -24,7 +24,6 @@ export interface SchemaTableColumnsConstraints {
 }
 
 export interface SchemaColumnType {
-    [index: string]: any;
     table_schemas: string;
     table_name: string;
     column_name: string;
@@ -35,11 +34,14 @@ export interface SchemaColumnType {
     is_nullable: string;
     pg_type: string;
     pg_max_length: number;
-    constraint_type: string|undefined;
+    constraint_name: string| undefined;
+    foreign_key: boolean|undefined;
     foreign_table_name: string|undefined;
     foreign_column_name: string|undefined;
     foreign_table_schema: string|undefined;
-    constraint_name: string|undefined;
+    primary_key: boolean|undefined;
+    unique: boolean| undefined
+
 }
 
 export interface SchemaColumns {
@@ -111,6 +113,7 @@ export interface ModelAttribute {
     reference?: any;
     onUpdate?: string | null;
     onDelete?: string | null;
+    unique?: boolean
     //noDimensionType?: string
 }
 

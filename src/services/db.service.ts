@@ -10,12 +10,8 @@ export class DbService {
         let upString: string = '';
         let downString: string = '';
         for (const table of tables) {
-            //console.log(schema_tables.indexOf(table));
             if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
-                console.log('ADDING');
-                console.log(table.table_name + ' ' + table.table_schema);
                 let curr_model = ModelService.getModelByTableName(sequelize, table?.table_name, table?.table_schema);
-                console.log(curr_model);
                 upString += StringsGeneratorService.getUpStringToAddTable(curr_model as ModelCtor<Model<any, any>> | undefined, table?.table_schema, table?.table_name);
                 downString += StringsGeneratorService.getUpStringToDeleteTable(table?.table_schema, table?.table_name);
             } else {
@@ -30,12 +26,9 @@ export class DbService {
     static async deleteMissingTablesFromDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
-        console.log(schema_tables);
-        console.log(tables);
         for (const schema_table of schema_tables) {
             if(schema_table.table_name != "SequelizeMeta") {
                 if (!tables.find((element) => element.table_name === schema_table.table_name && element.table_schema === schema_table.table_schema)) {
-                    console.log('DELETING');
                     //upString
                     upString += StringsGeneratorService.getUpStringToDeleteTable(schema_table.table_schema, schema_table.table_name);
                     //downString
@@ -67,7 +60,6 @@ export class DbService {
         delete_rule: string | null;
     }> {
         let options: any = (await sequelize.query(`select constraint_schema, constraint_name, update_rule, delete_rule from information_schema.referential_constraints WHERE constraint_schema='${table_schema}';`)).at(0);
-        console.log(options);
         for (const val in options) {
             if (options[val].constraint_name === name) return Promise.resolve({ update_rule: options[val].update_rule, delete_rule: options[val].delete_rule });
         }
@@ -87,13 +79,10 @@ export class DbService {
                     join pg_namespace ns on tbl.relnamespace = ns.oid  
                     where tbl.relname = '${table_name}'
                     and ns.nspname = '${table_schema}') a JOIN (SELECT table_schema, table_name, column_name, data_type, character_maximum_length, column_default, is_nullable, udt_name FROM information_schema.columns WHERE table_schema='${table_schema}' AND table_name='${table_name}') b ON b.column_name = a.attname;`)) as unknown as []
-        ).at(0) as unknown as SchemaTableColumnWithoutConstr[];
-        //console.log("SCHEMA TABLE COLUMNS");
-        //console.log(schema_table_columns)
+        ).at(0) as unknown as SchemaTableColumnWithoutConstr[]
         const schema_table_columns_constraints: SchemaTableColumnsConstraints[] = (await sequelize.query(`${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`)).at(0) as unknown as SchemaTableColumnsConstraints[];
         const pg_types: any = await sequelize.query(DbService.getPgColumnsInfo(table_schema, table_name));
         for (const column of schema_table_columns) {
-            //console.log(column)
             res[column.column_name] = {
                 table_schemas: column.table_schema,
                 table_name: column.table_name,
@@ -105,25 +94,31 @@ export class DbService {
                 dimension: column.attndims,
                 is_nullable: column.is_nullable,
                 constraint_name: undefined,
-                constraint_type: undefined,
+                foreign_key: undefined,
                 foreign_table_name: undefined,
                 foreign_column_name: undefined,
                 foreign_table_schema: undefined,
                 pg_max_length: column.atttypmod,
+                primary_key: undefined,
+                unique: undefined
             };
             for (const constraint of schema_table_columns_constraints) {
+                console.log(constraint)
                 if (column.column_name === constraint.column_name && constraint.constraint_type === 'FOREIGN KEY') {
-                    res[column.column_name].constraint_type = constraint.constraint_type;
+                    res[column.column_name].foreign_key = true;
                     res[column.column_name].foreign_table_name = constraint.foreign_table_name;
                     res[column.column_name].foreign_column_name = constraint.foreign_column_name;
                     res[column.column_name].foreign_table_schema = constraint.foreign_table_schema;
                     res[column.column_name].constraint_name = constraint.constraint_name;
-                } else if (column.column_name === constraint.column_name) {
-                    res[column.column_name].constraint_type = constraint.constraint_type;
+                } 
+                if (column.column_name === constraint.column_name && constraint.constraint_type === 'PRIMARY KEY') {
+                    res[column.column_name].primary_key = true;
+                }
+                if(column.column_name === constraint.column_name && constraint.constraint_type === 'UNIQUE') {
+                    res[column.column_name].unique = true;
                 }
             }
         }
-        console.log(res);
         return Promise.resolve(res);
     }
 
@@ -131,8 +126,6 @@ export class DbService {
         let table_info: SchemaColumns = await this.generateTableInfo(sequelize, table_schema, table_name);
         let res: TableToModel = {};
         for (const column in table_info) {
-            console.log("TABLE COLUMN TYPE");
-            console.log(table_info[column])
             res[column] = {};
             if (table_info[column].pg_type.match(/\"enum_\.*/)) {
                 //ENUM TYPE
@@ -142,7 +135,6 @@ export class DbService {
                 for (const val of enum_values.enum_range) type_string += `'${val}',`;
                 type_string += ')';
                 res[column].type = type_string;
-                console.log(type_string);
             } else if (table_info[column].column_type === 'ARRAY') {
                 //ARRAY TYPE
                 let type_string = '';
@@ -162,22 +154,21 @@ export class DbService {
                 res[column].autoIncrement = true;
             } else if (table_info[column].default_value !==null ) res[column].defaultValue = this.parseDefaultValue(table_info[column]);
             else res[column].defaultValue = undefined;
-            console.log(table_info[column]);
             if (table_info[column].is_nullable === 'YES') {
-                console.log('ALLOW NULL TRUE');
                 res[column].allowNull = true;
             } else res[column].allowNull = false;
-            if (table_info[column].constraint_type && table_info[column].constraint_type === 'PRIMARY KEY') //CONSTRAINTS
+            if (table_info[column].primary_key === true) //CONSTRAINTS
                 res[column].primaryKey = true;
-            if (table_info[column].constraint_type && table_info[column].constraint_type === 'FOREIGN KEY') {
+            if (table_info[column].foreign_key === true) {
                 res[column].reference = { model: { tableName: table_info[column].foreign_table_name, schema: table_info[column].foreign_table_schema }, key: table_info[column].foreign_column_name };
                 let fk_options = await DbService.getForeignKeyOptions(sequelize, table_info[column].constraint_name as string, table_info[column].table_schemas);
                 res[column].onUpdate = fk_options.update_rule;
                 res[column].onDelete = fk_options.delete_rule;
             }
+            if(table_info[column].unique===true) {
+                res[column].unique = true;
+            }
         }
-        console.log('TABLE TO MODEL RESULTS');
-        console.log(res);
         return Promise.resolve(res);
     }
 
@@ -186,8 +177,6 @@ export class DbService {
         default_value = default_value.replace(/ARRAY/g, '');
         default_value = default_value.replace(/::character varying\([^)]*\)/g, '');
         default_value = default_value.replace(/::character varying/g, '');
-        console.log('NEW DEFAULT VALUE');
-        console.log(default_value);
         return default_value;
     }
 

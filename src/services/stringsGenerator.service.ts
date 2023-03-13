@@ -16,19 +16,11 @@ export class StringsGeneratorService {
                 let columns_different = false;
                 let change_column_up_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 let change_column_down_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
-                console.log('ERROR COLUMN ' + tableInModel[column].field);
-                console.log(ModelService.getTypeByModelAttr(tableInModel[column].type));
-                console.log(tableInDb[real_column_name].type);
                 change_column_up_string += `type: ${ModelService.getTypeByModelAttr(tableInModel[column].type)},`;
                 change_column_down_string += `type: ${tableInDb[real_column_name].type},`;
                 if (ModelService.getTypeByModelAttr(tableInModel[column].type) !== tableInDb[real_column_name].type) { 
                     columns_different = true;
-                }
-
-                console.log('DB allow null: ' + tableInDb[real_column_name].allowNull);
-                console.log('Model allow null: ' + tableInModel[column].allowNull);
-                console.log(tableInModel[column]);
-                console.log(tableInDb[real_column_name]);
+                };
                 let model_allow_null = tableInModel[column].allowNull;
                 if(tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
                     model_allow_null = false;
@@ -46,8 +38,6 @@ export class StringsGeneratorService {
                     columns_different = true;
                 }
                 if (tableInModel[column].defaultValue !== tableInDb[real_column_name].defaultValue) {
-                    console.log('STRING GEN DEF');
-                    console.log(tableInModel[real_column_name].defaultValue);
                     change_column_up_string += `defaultValue: ${JSON.stringify(tableInModel[column].defaultValue)},`;
                     change_column_down_string += `defaultValue: ${tableInDb[real_column_name].defaultValue},`;
 
@@ -58,11 +48,13 @@ export class StringsGeneratorService {
                     change_column_down_string += `primaryKey: ${tableInDb[real_column_name].primaryKey},`;
                     columns_different = true;
                 }
+                if (tableInModel[column].unique !== tableInDb[real_column_name].unique) {
+                    change_column_up_string += `unique: ${tableInModel[column].unique},`;
+                    change_column_down_string += `unique: ${tableInDb[real_column_name].unique},`;
+                    columns_different = true;
+                }
                 let references_in_model = tableInModel[column].references as { model: { tableName: string; schema: string } | string; key: string };
                 let reference_in_db = tableInDb[real_column_name].reference as { model: { tableName: string; schema: string }; key: string };
-                console.log('CMP COLUMNS:');
-                console.log(tableInDb[real_column_name]);
-                console.log(tableInModel[column]);
                 if (references_in_model) {
                     if (
                         reference_in_db &&
@@ -100,7 +92,6 @@ export class StringsGeneratorService {
             } else {
                 //column is missing in Db -> add
                 up_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
-                console.log('ADDING COLUMN');
                 up_string += ModelService.getModelColumnDescriptionAsString(tableInModel, column);
                 up_string += `{ transaction: t });`;
                 down_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {transaction: t});`;
@@ -108,16 +99,10 @@ export class StringsGeneratorService {
         }
         //column is missing in Model -> delete
         for (const column in tableInDb) {
-            console.log("DELETING CHECK");
-            console.log(column);
             if (!model_columns_names.includes(column)) {
-                console.log('DELETING COLUMN');
-                console.log(model_columns_names);
-                console.log(column);
                 up_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {transaction: t});`;
                 down_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {`;
                 for (const column_attr in tableInDb[column]) {
-                    console.log(tableInDb[column][column_attr as keyof object]);
                     down_string += `${column_attr}: ${tableInDb[column][column_attr as keyof object]},`;
                 }
                 down_string += '},{transaction: t});';
