@@ -2,11 +2,27 @@ import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, Bel
 import {Model2} from "./model2"
 @Table
 class Model1 extends Model {
+    @Unique({name: '1', msg:'fine'})
     @Column
-    model1Col2!: number;
+    col1!: number
+
+    @Column
+    col2!: number
     
-    @HasOne(() => Model2)
-    model2!: Model2;
+    @Unique
+    @Column
+    col3!: number
+
+    @Column
+    col4!: number;
+
+    @PrimaryKey
+    @Column
+    col5!: number
+
+    @Unique
+    @Column
+    col6!: number
 }
 
 

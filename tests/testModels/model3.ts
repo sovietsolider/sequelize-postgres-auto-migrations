@@ -6,8 +6,9 @@ class Model3 extends Model {
     @Column
     model3Col1!: string;
 
-    /*@HasOne(() => Model2)
-    fk2!: Model2*/
+    @Column
+    forFk1!: number;
+
 }
 
 export { Model3 }

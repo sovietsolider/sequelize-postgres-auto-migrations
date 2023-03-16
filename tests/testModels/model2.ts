@@ -4,13 +4,21 @@ import { Model3 } from './model3';
 
 @Table
 class Model2 extends Model {
-    @ForeignKey(() => Model1)
-    @Unique
     @Column
     fk1!: number;
 
-    @BelongsTo(() => Model1, { onDelete: 'RESTRICT', onUpdate: 'RESTRICT'})
-    model3!: Model3
+    @ForeignKey(() => Model3)
+    @Column
+    fk3!: number
+
+    @ForeignKey(() => Model3) 
+    fk4!: number
+
+    @BelongsTo(() => Model3, 'fk3')
+    f!: Model3;
+
+    @BelongsTo(() => Model3, 'fk4')
+    f1!: Model3
 }
 
 export {Model2}

@@ -81,6 +81,7 @@ export class DbService {
                     and ns.nspname = '${table_schema}') a JOIN (SELECT table_schema, table_name, column_name, data_type, character_maximum_length, column_default, is_nullable, udt_name FROM information_schema.columns WHERE table_schema='${table_schema}' AND table_name='${table_name}') b ON b.column_name = a.attname;`)) as unknown as []
         ).at(0) as unknown as SchemaTableColumnWithoutConstr[]
         const schema_table_columns_constraints: SchemaTableColumnsConstraints[] = (await sequelize.query(`${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`)).at(0) as unknown as SchemaTableColumnsConstraints[];
+        console.log(schema_table_columns_constraints);
         const pg_types: any = await sequelize.query(DbService.getPgColumnsInfo(table_schema, table_name));
         for (const column of schema_table_columns) {
             res[column.column_name] = {
@@ -160,8 +161,10 @@ export class DbService {
             if (table_info[column].is_nullable === 'YES') {
                 res[column].allowNull = true;
             } else res[column].allowNull = false;
-            if (table_info[column].primary_key === true) //CONSTRAINTS 
+            if (table_info[column].primary_key === true) {//CONSTRAINTS 
                 res[column].primaryKey = true;
+                res[column].pk_name = table_info[column].pk_constraint_name;
+            }
             if (table_info[column].foreign_key === true) {
                 res[column].foreignKey = true;
                 res[column].fk_name = table_info[column].fk_constraint_name;
@@ -172,6 +175,7 @@ export class DbService {
             }
             if(table_info[column].unique===true) {
                 res[column].unique = true;
+                res[column].unique_name = table_info[column].unique_constraint_name;
             }
         }
         return Promise.resolve(res);
