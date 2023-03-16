@@ -8,7 +8,6 @@ class Model3 extends Model {
 
     @Column
     forFk1!: number;
-
 }
 
 export { Model3 }

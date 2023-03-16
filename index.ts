@@ -5,6 +5,7 @@ import { Model2 } from "./tests/testModels/model2";
 import { Model3 } from "./tests/testModels/model3";
 import { DbService } from "./src/services/db.service";
 import { Table, HasMany, ForeignKey, Model } from "sequelize-typescript";
+import { Model4 } from "./tests/testModels/model4";
 
 export const sequelize = new Sequelize({
     database: 'test',
@@ -12,7 +13,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model1],
+    models: [Model1,Model2, Model3],
     define: {
         freezeTableName: true,
     },

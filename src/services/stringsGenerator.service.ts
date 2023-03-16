@@ -134,49 +134,52 @@ export class StringsGeneratorService {
         for(const field of fk_model_fields) { //если fk нету в дб -> добавляем
             if(!fk_db_fields.includes(field)) {
                 let model_ref = this.getModelReference(tableInModel[field].references as {model: {tableName: string; schema: string;} | string; key: string;});
-                res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'] 
+                res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'],
                 references: { 
                     table: { tableName: '${model_ref.model.tableName}', schema: '${model_ref.model.schema}' },
                     field: '${model_ref.key}',
                 }, 
                 onDelete: '${tableInModel[field].onDelete}',
-                onUpdate: '${tableInModel[field].onUpdate}',   
+                onUpdate: '${tableInModel[field].onUpdate}', 
+                name: '${this.getConstraintNameByModel(table_name, table_schema, field, 'fkey')}',
                 transaction: t});`;
                 res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintNameByModel(table_name, table_schema, field, 'fkey')}', {transaction: t});`
             }
             else {
-                if(JSON.stringify(tableInModel[field].references) !== JSON.stringify(tableInDb[field].reference)) {
+                if(JSON.stringify(this.getModelReference(tableInModel[field].references as {model: {tableName: string; schema: string;} | string; key: string;})) !== JSON.stringify(tableInDb[field].reference)) {
                     let model_ref = this.getModelReference(tableInModel[field].references as {model: {tableName: string; schema: string;} | string; key: string;});
                     res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[field].pk_name}', {transaction: t});`;
-                    res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'] 
+                    res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'],
                     references: { 
                         table: { tableName: '${model_ref.model.tableName}', schema: '${model_ref.model.schema}' },
                         field: '${model_ref.key}',
                     }, 
                     onDelete: '${tableInModel[field].onDelete}',
                     onUpdate: '${tableInModel[field].onUpdate}',   
+                    name: '${this.getConstraintNameByModel(table_name, table_schema, field, 'fkey')}',
                     transaction: t});`;
                     res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintNameByModel(table_name, table_schema, field, 'fkey')}', {transaction: t});`
-                    res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'] 
+                    res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'], 
                     references: { 
                         table: { tableName: '${tableInDb[field].reference.model.tableName}', schema: '${tableInDb[field].reference.model.schema}'},
                         field: '${tableInDb[field].reference.key}',
                     }, 
-                    onDelete: '${tableInModel[field].onDelete}',
+                    onDelete: '${tableInDb[field].onDelete}',
                     onUpdate: '${tableInDb[field].onUpdate}',   
+                    name: '${tableInDb[field].fk_name}',
                     transaction: t});`;
                 }
             }
         }
         for(const field of fk_db_fields) { 
             if(!fk_model_fields.includes(field)) { //no fk in model -> delete fk from db
-                res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[field].pk_name}', {transaction: t});`;
-                res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'] 
+                res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[field].fk_name}', {transaction: t});`;
+                res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'],
                     references: { 
                         table: { tableName: '${tableInDb[field].reference.model.tableName}', schema: '${tableInDb[field].reference.model.schema}'},
                         field: '${tableInDb[field].reference.key}',
                     }, 
-                    onDelete: '${tableInModel[field].onDelete}',
+                    onDelete: '${tableInDb[field].onDelete}',
                     onUpdate: '${tableInDb[field].onUpdate}',   
                     transaction: t});`;
             }
@@ -199,7 +202,7 @@ export class StringsGeneratorService {
         
         let keys_to_delete: Array<string> = []
         for(const item in model_composite_unique_list) {
-            if(model_composite_unique_list[item].length > 1) {
+            if(model_composite_unique_list[item].length > 1 || (item !== this.getConstraintNameByModel(table_name, table_schema, model_composite_unique_list[item][0], 'key'))) {
                 let tmp: Array<string> = [];
                 for(const field of model_composite_unique_list[item]) {
                     tmp.push(field);
@@ -219,10 +222,7 @@ export class StringsGeneratorService {
                 db_unique_list[tableInDb[field].unique_name as string] = [];
             db_unique_list[tableInDb[field].unique_name as string].push(field);
         }
-        console.log("UNIQUE MODEL LISTS")
-        console.log(model_composite_unique_list);
-        console.log("UNIQUE DB LIST");
-        console.log(db_unique_list);
+
 
         for(const constr_name in model_composite_unique_list) {
             if(!Object.keys(db_unique_list).includes(constr_name)) { //db doesnt have this unique -> add
@@ -252,10 +252,10 @@ export class StringsGeneratorService {
 
     private static getConstraintNameOfCompositeKey(table_name: string, table_schema: string, fields: Array<string>, suffix: string) {
         let res_string = '';
-        if(table_schema === 'public') 
+        //if(table_schema === 'public') 
             res_string = `${table_name}_`;
-        else
-            res_string = `${table_schema}.${table_name}_`
+        //else
+        //    res_string = `${table_schema}.${table_name}_`
         for(const field of fields) {
             res_string += `${field}_`
         }
@@ -264,10 +264,10 @@ export class StringsGeneratorService {
     }
     static getConstraintNameByModel(table_name: string, table_schema: string, column_name: string, suffix: string): string {
         let res_string = '';
-        if(table_schema === 'public') 
+        //if(table_schema === 'public') 
             res_string = `${table_name}_`;
-        else
-            res_string = `${table_schema}.${table_name}_`
+        //else
+        //    res_string = `${table_schema}.${table_name}_`
         if(suffix === 'pkey')
             return res_string + `${suffix}`;
         return res_string + `${column_name}_${suffix}`;

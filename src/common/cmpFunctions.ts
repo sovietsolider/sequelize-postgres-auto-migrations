@@ -12,10 +12,10 @@ export async function compareTables(sequelize: Sequelize, pathToMigrationFile: s
     const tables: modelInfoType[] = ModelService.generateModelsInfo(sequelize) as unknown as modelInfoType[];
     //console.log(schema_tables);
     //console.log(tables);
-    let add_strings: { upString: string; downString: string } = await DbService.addMissingTablesToDb(sequelize, schema_tables, tables);
+    let add_strings: { upString: string; downString: string } = await DbService.addMissingTablesToDb(sequelize, schema_tables, tables); //adding tables
     FileService.writeToMigrationFile(pathToMigrationFile, add_strings.upString);
 
-    let delete_string: { upString: string; downString: string } = await DbService.deleteMissingTablesFromDb(sequelize, schema_tables, tables);
+    let delete_string: { upString: string; downString: string } = await DbService.deleteMissingTablesFromDb(sequelize, schema_tables, tables); //deleting tables
     FileService.writeToMigrationFile(pathToMigrationFile, delete_string.upString);
     FileService.writeToMigrationFile(pathToMigrationFile, '});},');
     FileService.writeToMigrationFile(pathToMigrationFile, 'down: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {');
