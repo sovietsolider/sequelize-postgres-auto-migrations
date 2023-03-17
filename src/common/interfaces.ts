@@ -1,11 +1,10 @@
-
 export interface SchemaTableColumnWithoutConstr {
     table_schema: string;
     table_name: string;
     column_name: string;
     data_type: string;
     character_maximum_length: string | null;
-    column_default: null|string;
+    column_default: null | string;
     is_nullable: string;
     attndims: number;
     display_type: string;
@@ -28,22 +27,21 @@ export interface SchemaColumnType {
     table_name: string;
     column_name: string;
     column_type: string;
-    max_length: string|null;
+    max_length: string | null;
     default_value: any;
     dimension: number;
     is_nullable: string;
     pg_type: string;
     pg_max_length: number;
-    fk_constraint_name: string| undefined;
-    pk_constraint_name: string| undefined;
-    unique_constraint_name: string| undefined;
-    foreign_key: boolean|undefined;
-    foreign_table_name: string|undefined;
-    foreign_column_name: string|undefined;
-    foreign_table_schema: string|undefined;
-    primary_key: boolean|undefined;
-    unique: boolean| undefined
-
+    fk_constraint_name: string | undefined;
+    pk_constraint_name: string | undefined;
+    unique_constraint_name: string | undefined;
+    foreign_key: boolean | undefined;
+    foreign_table_name: string | undefined;
+    foreign_column_name: string | undefined;
+    foreign_table_schema: string | undefined;
+    primary_key: boolean | undefined;
+    unique: boolean | undefined;
 }
 
 export interface SchemaColumns {
@@ -99,7 +97,7 @@ export const sqlToSeqTypes: sqlToSeqTypesInterface = {
     bytea: 'Sequelize.BLOB',
     citext: 'Sequelize.CITEXT',
     uuid: 'Sequelize.UUIDV1',
-    numeric: 'Sequelize.DECIMAL'
+    numeric: 'Sequelize.DECIMAL',
 };
 
 export interface TableToModel {
@@ -112,14 +110,14 @@ export interface ModelAttribute {
     defaultValue?: string | null;
     allowNull?: boolean;
     primaryKey?: boolean;
-    reference?: any;
+    references?: any;
     onUpdate?: string | null;
     onDelete?: string | null;
-    unique?: boolean,
-    foreignKey?: boolean,
-    pk_name?: string,
-    fk_name?: string,
-    unique_name?: string
+    unique?: boolean;
+    foreignKey?: boolean;
+    pk_name?: string;
+    fk_name?: string;
+    unique_name?: string;
     //noDimensionType?: string
 }
 
@@ -129,6 +127,6 @@ export interface modelInfoType {
 }
 
 export interface comparisonOptions {
-    enableCascadeDeleting: boolean,
-    replaceTableWhenAttributesMatch: boolean
+    enableCascadeDeleting: boolean;
+    replaceTableWhenAttributesMatch: boolean;
 }

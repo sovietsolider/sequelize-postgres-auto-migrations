@@ -3,7 +3,6 @@ import { Sequelize } from 'sequelize-typescript';
 import { Model1 } from './testModels/model1'
 import { Model2 } from './testModels/model2';
 import { Model3 } from './testModels/model3';
-import { Book } from './testModels/modelToAdd1';
 import { FileService } from '../src/services/file.service';
 import { compareTables } from '../src/common/cmpFunctions';
 import * as fs from 'fs' 

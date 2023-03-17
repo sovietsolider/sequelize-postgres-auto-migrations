@@ -13,6 +13,8 @@
     "typedoc": "^0.23.26"
   },
   "dependencies": {
+    "@types/js-beautify": "^1.13.3",
+    "js-beautify": "^1.14.7",
     "pg": "^8.9.0",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^6.29.0",

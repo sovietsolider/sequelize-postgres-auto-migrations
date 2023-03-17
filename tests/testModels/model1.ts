@@ -8,6 +8,9 @@ class Model1 extends Model {
 
     @Column
     col2!: number
+/*
+    @HasOne(() => Model2)
+    model2!: Model2*/
 }
 
 

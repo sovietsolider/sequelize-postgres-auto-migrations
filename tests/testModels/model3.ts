@@ -8,6 +8,9 @@ class Model3 extends Model {
 
     @Column
     forFk1!: number;
+
+    @HasOne(() => Model2)
+    model2!: Model2
 }
 
 export { Model3 }

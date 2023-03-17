@@ -22,11 +22,11 @@ export class FileService {
     }
 
     static generateMigrationFile(migrationName: string, path: string): string {
-        let content: string = 'module.exports = {\n up: async (queryInterface, Sequelize) => {\nawait queryInterface.sequelize.transaction(async (t) => {';
+        //let content: string = 'module.exports = { up: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         let res_path: string = `${path}/${this.generateFileName(migrationName)}.js`;
         console.log('PATH:' + path);
         try {
-            fs.writeFileSync(res_path, content);
+            fs.writeFileSync(res_path, '');
         } catch (error) {
             console.log('FILE NOT CREATED');
             console.log(error);

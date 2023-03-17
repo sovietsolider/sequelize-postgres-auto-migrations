@@ -1,21 +1,52 @@
 import { Sequelize, Model, ModelCtor } from 'sequelize-typescript';
 import { modelInfoType, TableToModel } from '../common/interfaces';
-import { sqlToSeqTypes, SchemaTableColumnsConstraints, SchemaColumnType, SchemaColumns, SchemaTableColumnWithoutConstr } from '../common/interfaces';
+import {
+    sqlToSeqTypes,
+    SchemaTableColumnsConstraints,
+    SchemaColumnType,
+    SchemaColumns,
+    SchemaTableColumnWithoutConstr,
+} from '../common/interfaces';
 import { StringsGeneratorService } from './stringsGenerator.service';
 import { ModelService } from './model.service';
 const pg_magic_round = 4;
 
 export class DbService {
-    static async addMissingTablesToDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): Promise<{ upString: string; downString: string }> {
+    static async addMissingTablesToDb(
+        sequelize: Sequelize,
+        schema_tables: Array<any>,
+        tables: modelInfoType[],
+    ): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
         for (const table of tables) {
-            if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
-                let curr_model = ModelService.getModelByTableName(sequelize, table?.table_name, table?.table_schema);
-                upString += StringsGeneratorService.getUpStringToAddTable(curr_model as ModelCtor<Model<any, any>> | undefined, table?.table_schema, table?.table_name);
-                downString += StringsGeneratorService.getUpStringToDeleteTable(table?.table_schema, table?.table_name);
+            if (
+                !schema_tables.find(
+                    (element) =>
+                        element.table_name === table?.table_name &&
+                        element.table_schema === table?.table_schema,
+                )
+            ) {
+                let curr_model = ModelService.getModelByTableName(
+                    sequelize,
+                    table?.table_name,
+                    table?.table_schema,
+                );
+                upString += StringsGeneratorService.getUpStringToAddTable(
+                    curr_model as ModelCtor<Model<any, any>> | undefined,
+                    table?.table_schema,
+                    table?.table_name,
+                );
+                downString += StringsGeneratorService.getUpStringToDeleteTable(
+                    table?.table_schema,
+                    table?.table_name,
+                );
             } else {
-                let change_column_strings = await StringsGeneratorService.getStringsToChangeTable(sequelize, table.table_schema, table.table_name);
+                let change_column_strings = await StringsGeneratorService.getStringsToChangeTable(
+                    sequelize,
+                    table.table_schema,
+                    table.table_name,
+                );
                 upString += change_column_strings.upString;
                 downString += change_column_strings.downString;
             }
@@ -23,23 +54,40 @@ export class DbService {
         return Promise.resolve({ upString, downString });
     }
 
-    static async deleteMissingTablesFromDb(sequelize: Sequelize, schema_tables: Array<any>, tables: modelInfoType[]): Promise<{ upString: string; downString: string }> {
+    static async deleteMissingTablesFromDb(
+        sequelize: Sequelize,
+        schema_tables: Array<any>,
+        tables: modelInfoType[],
+    ): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
         for (const schema_table of schema_tables) {
-            if(schema_table.table_name != "SequelizeMeta") {
-                if (!tables.find((element) => element.table_name === schema_table.table_name && element.table_schema === schema_table.table_schema)) {
+            if (schema_table.table_name != 'SequelizeMeta') {
+                if (
+                    !tables.find(
+                        (element) =>
+                            element.table_name === schema_table.table_name &&
+                            element.table_schema === schema_table.table_schema,
+                    )
+                ) {
                     //upString
-                    upString += StringsGeneratorService.getUpStringToDeleteTable(schema_table.table_schema, schema_table.table_name);
+                    upString += StringsGeneratorService.getUpStringToDeleteTable(
+                        schema_table.table_schema,
+                        schema_table.table_name,
+                    );
                     //downString
-                    downString += await StringsGeneratorService.getDownStringToAddTable(sequelize, schema_table.table_schema, schema_table.table_name);
+                    downString += await StringsGeneratorService.getDownStringToAddTable(
+                        sequelize,
+                        schema_table.table_schema,
+                        schema_table.table_name,
+                    );
                 }
             }
         }
         return Promise.resolve({ upString, downString });
     }
 
-    static getPgColumnsInfo(table_schema: string, table_name: string): string {
+    private static getPgColumnsInfo(table_schema: string, table_name: string): string {
         return `select att.attname, 
         att.attndims, 
         att.atttypmod,
@@ -51,7 +99,7 @@ export class DbService {
         and ns.nspname = '${table_schema}'`;
     }
 
-    static async getForeignKeyOptions(
+    private static async getForeignKeyOptions(
         sequelize: Sequelize,
         name: string,
         table_schema: string,
@@ -59,14 +107,26 @@ export class DbService {
         update_rule: string | null;
         delete_rule: string | null;
     }> {
-        let options: any = (await sequelize.query(`select constraint_schema, constraint_name, update_rule, delete_rule from information_schema.referential_constraints WHERE constraint_schema='${table_schema}';`)).at(0);
+        let options: any = (
+            await sequelize.query(
+                `select constraint_schema, constraint_name, update_rule, delete_rule from information_schema.referential_constraints WHERE constraint_schema='${table_schema}';`,
+            )
+        ).at(0);
         for (const val in options) {
-            if (options[val].constraint_name === name) return Promise.resolve({ update_rule: options[val].update_rule, delete_rule: options[val].delete_rule });
+            if (options[val].constraint_name === name)
+                return Promise.resolve({
+                    update_rule: options[val].update_rule,
+                    delete_rule: options[val].delete_rule,
+                });
         }
         return Promise.resolve({ update_rule: null, delete_rule: null });
     }
 
-    static async generateTableInfo(sequelize: Sequelize, table_schema: string, table_name: string): Promise<SchemaColumns> {
+    private static async generateTableInfo(
+        sequelize: Sequelize,
+        table_schema: string,
+        table_name: string,
+    ): Promise<SchemaColumns> {
         let res: SchemaColumns = {};
         const schema_table_columns: SchemaTableColumnWithoutConstr[] = (
             (await sequelize.query(`
@@ -79,10 +139,16 @@ export class DbService {
                     join pg_namespace ns on tbl.relnamespace = ns.oid  
                     where tbl.relname = '${table_name}'
                     and ns.nspname = '${table_schema}') a JOIN (SELECT table_schema, table_name, column_name, data_type, character_maximum_length, column_default, is_nullable, udt_name FROM information_schema.columns WHERE table_schema='${table_schema}' AND table_name='${table_name}') b ON b.column_name = a.attname;`)) as unknown as []
-        ).at(0) as unknown as SchemaTableColumnWithoutConstr[]
-        const schema_table_columns_constraints: SchemaTableColumnsConstraints[] = (await sequelize.query(`${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`)).at(0) as unknown as SchemaTableColumnsConstraints[];
+        ).at(0) as unknown as SchemaTableColumnWithoutConstr[];
+        const schema_table_columns_constraints: SchemaTableColumnsConstraints[] = (
+            await sequelize.query(
+                `${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`,
+            )
+        ).at(0) as unknown as SchemaTableColumnsConstraints[];
         console.log(schema_table_columns_constraints);
-        const pg_types: any = await sequelize.query(DbService.getPgColumnsInfo(table_schema, table_name));
+        const pg_types: any = await sequelize.query(
+            DbService.getPgColumnsInfo(table_schema, table_name),
+        );
         for (const column of schema_table_columns) {
             res[column.column_name] = {
                 table_schemas: column.table_schema,
@@ -103,21 +169,30 @@ export class DbService {
                 foreign_table_schema: undefined,
                 pg_max_length: column.atttypmod,
                 primary_key: undefined,
-                unique: undefined
+                unique: undefined,
             };
             for (const constraint of schema_table_columns_constraints) {
-                if (column.column_name === constraint.column_name && constraint.constraint_type === 'FOREIGN KEY') {
+                if (
+                    column.column_name === constraint.column_name &&
+                    constraint.constraint_type === 'FOREIGN KEY'
+                ) {
                     res[column.column_name].foreign_key = true;
                     res[column.column_name].foreign_table_name = constraint.foreign_table_name;
                     res[column.column_name].foreign_column_name = constraint.foreign_column_name;
                     res[column.column_name].foreign_table_schema = constraint.foreign_table_schema;
                     res[column.column_name].fk_constraint_name = constraint.constraint_name;
-                } 
-                if (column.column_name === constraint.column_name && constraint.constraint_type === 'PRIMARY KEY') {
+                }
+                if (
+                    column.column_name === constraint.column_name &&
+                    constraint.constraint_type === 'PRIMARY KEY'
+                ) {
                     res[column.column_name].primary_key = true;
                     res[column.column_name].pk_constraint_name = constraint.constraint_name;
                 }
-                if(column.column_name === constraint.column_name && constraint.constraint_type === 'UNIQUE') {
+                if (
+                    column.column_name === constraint.column_name &&
+                    constraint.constraint_type === 'UNIQUE'
+                ) {
                     res[column.column_name].unique = true;
                     res[column.column_name].unique_constraint_name = constraint.constraint_name;
                 }
@@ -127,7 +202,11 @@ export class DbService {
     }
 
     static async tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string) {
-        let table_info: SchemaColumns = await this.generateTableInfo(sequelize, table_schema, table_name);
+        let table_info: SchemaColumns = await this.generateTableInfo(
+            sequelize,
+            table_schema,
+            table_name,
+        );
         let res: TableToModel = {};
         for (const column in table_info) {
             res[column] = {};
@@ -135,45 +214,74 @@ export class DbService {
                 //ENUM TYPE
                 let type_string = '';
                 type_string += `Sequelize.ENUM(`;
-                let enum_values: { enum_range: Array<string> } = ((await sequelize.query(`SELECT enum_range(NULL::${table_info[column].pg_type});`)).at(0) as Array<any>).at(0);
+                let enum_values: { enum_range: Array<string> } = (
+                    (
+                        await sequelize.query(
+                            `SELECT enum_range(NULL::${table_info[column].pg_type});`,
+                        )
+                    ).at(0) as Array<any>
+                ).at(0);
                 for (const val of enum_values.enum_range) type_string += `'${val}',`;
                 type_string += ')';
                 res[column].type = type_string;
             } else if (table_info[column].column_type === 'ARRAY') {
                 //ARRAY TYPE
                 let type_string = '';
-                let final_array_type: string = table_info[column].pg_type.replace('[]', '') as string;
+                let final_array_type: string = table_info[column].pg_type.replace(
+                    '[]',
+                    '',
+                ) as string;
                 //res[column].noDimensionType = sqlToSeqTypes[final_array_type];
-                for (let i = 0; i < table_info[column].dimension; i++) type_string += `Sequelize.ARRAY(`;
-                
-                if (sqlToSeqTypes[final_array_type] === 'Sequelize.STRING') type_string += `Sequelize.STRING(${table_info[column].pg_max_length-pg_magic_round})`;
+                for (let i = 0; i < table_info[column].dimension; i++)
+                    type_string += `Sequelize.ARRAY(`;
+
+                if (sqlToSeqTypes[final_array_type] === 'Sequelize.STRING')
+                    type_string += `Sequelize.STRING(${
+                        table_info[column].pg_max_length - pg_magic_round
+                    })`;
                 else type_string += `${sqlToSeqTypes[final_array_type]}`;
                 for (let i = 0; i < table_info[column].dimension; i++) {
                     type_string += ')';
                 }
                 res[column].type = type_string;
-            } else if (table_info[column].column_type === 'character varying') res[column].type = `Sequelize.STRING(${table_info[column].max_length})`;
+            } else if (table_info[column].column_type === 'character varying')
+                res[column].type = `Sequelize.STRING(${table_info[column].max_length})`;
             else res[column].type = `${sqlToSeqTypes[table_info[column].column_type]}`;
-            if (table_info[column].default_value && table_info[column].default_value.match(/\bnextval.*/)) {
+            if (
+                table_info[column].default_value &&
+                table_info[column].default_value.match(/\bnextval.*/)
+            ) {
                 res[column].autoIncrement = true;
-            } else if (table_info[column].default_value !==null ) res[column].defaultValue = this.parseDefaultValue(table_info[column]);
+            } else if (table_info[column].default_value !== null)
+                res[column].defaultValue = this.parseDefaultValue(table_info[column]);
             else res[column].defaultValue = undefined;
             if (table_info[column].is_nullable === 'YES') {
                 res[column].allowNull = true;
             } else res[column].allowNull = false;
-            if (table_info[column].primary_key === true) {//CONSTRAINTS 
+            if (table_info[column].primary_key === true) {
+                //CONSTRAINTS
                 res[column].primaryKey = true;
                 res[column].pk_name = table_info[column].pk_constraint_name;
             }
             if (table_info[column].foreign_key === true) {
                 res[column].foreignKey = true;
                 res[column].fk_name = table_info[column].fk_constraint_name;
-                res[column].reference = { model: { tableName: table_info[column].foreign_table_name, schema: table_info[column].foreign_table_schema }, key: table_info[column].foreign_column_name };
-                let fk_options = await DbService.getForeignKeyOptions(sequelize, table_info[column].fk_constraint_name as string, table_info[column].table_schemas);
+                res[column].references = {
+                    model: {
+                        tableName: table_info[column].foreign_table_name,
+                        schema: table_info[column].foreign_table_schema,
+                    },
+                    key: table_info[column].foreign_column_name,
+                };
+                let fk_options = await DbService.getForeignKeyOptions(
+                    sequelize,
+                    table_info[column].fk_constraint_name as string,
+                    table_info[column].table_schemas,
+                );
                 res[column].onUpdate = fk_options.update_rule;
                 res[column].onDelete = fk_options.delete_rule;
             }
-            if(table_info[column].unique===true) {
+            if (table_info[column].unique === true) {
                 res[column].unique = true;
                 res[column].unique_name = table_info[column].unique_constraint_name;
             }

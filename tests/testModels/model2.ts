@@ -7,12 +7,12 @@ class Model2 extends Model {
     @Column
     fk1!: number;
 
+    @ForeignKey(() => Model3)
     @Column
     fk3!: number
 
-    @Column
-    fk4!: number
-
+    @BelongsTo(() => Model3)
+    model1!: Model3
 }
 
 export {Model2}
