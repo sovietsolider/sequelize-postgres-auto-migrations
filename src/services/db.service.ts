@@ -41,6 +41,7 @@ export class DbService {
                     curr_model as ModelCtor<Model<any, any>> | undefined,
                     table?.table_schema,
                     table?.table_name,
+                    table.table_schema
                 );
                 downString += StringsGeneratorService.getUpStringToDeleteTable(
                     table?.table_schema,

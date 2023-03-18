@@ -504,12 +504,13 @@ export class StringsGeneratorService {
         model: ModelCtor<Model<any, any>> | undefined,
         model_schema: string | undefined,
         table_name: string,
+        table_schema: string
     ): string {
         //console.log('GENERATE STRING SCHEMA NAME');
         let description = model?.getAttributes();
-        let res_string = `await queryInterface.createTable("${table_name}",{`;
+        let res_string = `await queryInterface.createTable({tableName: '${table_name}', schema: '${table_schema}'},{`;
         res_string += ModelService.getModelColumnsAsString(description);
-        res_string += `},{ transaction: t, schema: "${model_schema}"},);`;
+        res_string += `},{ transaction: t, schema: '${model_schema}'});`;
         return res_string;
     }
 
@@ -518,7 +519,7 @@ export class StringsGeneratorService {
         table_schema: string,
         table_name: string,
     ): Promise<string> {
-        let res_string = `await queryInterface.createTable("${table_name}",{`;
+        let res_string = `await queryInterface.createTable({tableName: '${table_name}', schema: '${table_schema}'},{`;
         let attributes = await DbService.tableToModelInfo(sequelize, table_schema, table_name);
         //let options_to_except: Array<string> = [];
         for (const column in attributes) {
@@ -540,12 +541,12 @@ export class StringsGeneratorService {
             //res_string = res_string.replace(/"\bpk_name":"\b[^"]*"/g, '');
             //res_string = res_string.replace(/"\bfk_name":"\b[^"]*"/g, '');
         }
-        res_string += `},{ transaction: t, schema: "${table_schema}"},);`;
+        res_string += `},{ transaction: t, schema: '${table_schema}'});`;
 
         return Promise.resolve(res_string);
     }
 
     static getUpStringToDeleteTable(model_schema: string | undefined, table_name: string) {
-        return `await queryInterface.dropTable({ tableName: '${table_name}', tableSchema: '${model_schema}'},{ transaction: t },);`;
+        return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ transaction: t });`;
     }
 }
