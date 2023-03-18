@@ -156,6 +156,7 @@ export class StringsGeneratorService {
             tableInModel,
             tableInDb,
         ).res_down_string.add_constr_string; //добавление ограничений
+        this.compareIndexesConstraints(table_schema, table_name, tableInModel, tableInDb);
 
         return Promise.resolve({
             upString: res_string.up_string,
@@ -429,6 +430,20 @@ export class StringsGeneratorService {
         return { res_up_string, res_down_string };
     }
 
+    private static async compareIndexesConstraints(
+        table_schema: string,
+        table_name: string,
+        tableInModel: {
+            readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
+        },
+        tableInDb: TableToModel,
+    ) { 
+        let db_indexes = (await DbService.getTableIndexes(table_schema, table_name)).at(0);
+        console.log("INDEXES")
+        console.log(tableInModel)
+        console.log(db_indexes);
+    }
+
     private static getConstraintNameOfCompositeKey(
         table_name: string,
         table_schema: string,
@@ -461,7 +476,7 @@ export class StringsGeneratorService {
         return res_string + `${column_name}_${suffix}`;
     }
 
-    private static getModelReference(model_references: {
+    static getModelReference(model_references: {
         model: { tableName: string; schema: string } | string;
         key: string;
     }) {
@@ -513,14 +528,17 @@ export class StringsGeneratorService {
                 if(!options_to_except.includes(opt))
                 res_string += `${opt}: `
             }*/
+            options.unique_name = undefined;
+            options.fk_name = undefined;
+            options.pk_name = undefined;
             res_string += `${JSON.stringify(options)}, `;
             res_string = res_string.replace(
                 /"\btype":"Sequelize.\b[^"]*"/g,
                 `"type":${options.type}`,
             );
-            res_string = res_string.replace(/"\bunique_name":"\b[^"]*"/g, '');
-            res_string = res_string.replace(/"\bpk_name":"\b[^"]*"/g, '');
-            res_string = res_string.replace(/"\bfk_name":"\b[^"]*"/g, '');
+            //res_string = res_string.replace(/"\bunique_name":"\b[^"]*"/g, '');
+            //res_string = res_string.replace(/"\bpk_name":"\b[^"]*"/g, '');
+            //res_string = res_string.replace(/"\bfk_name":"\b[^"]*"/g, '');
         }
         res_string += `},{ transaction: t, schema: "${table_schema}"},);`;
 
