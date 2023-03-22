@@ -4,11 +4,9 @@ import { Model2 } from './model2';
 @Table
 class Model3 extends Model {
     @AllowNull(false)
+    @PrimaryKey
     @Column
-    model3Col1!: string;
-
-    @Column
-    forFk1!: number;
+    model3Col1!: number;
 
     @HasOne(() => Model2)
     model2!: Model2;

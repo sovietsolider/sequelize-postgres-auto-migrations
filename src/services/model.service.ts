@@ -118,7 +118,7 @@ export class ModelService {
                         model: string;
                         key: string;
                     };
-                    res_string += `${inside_attr}: { model: "${reference.model}", key: "${reference.key}"},`;
+                    res_string += `${inside_attr}: { model: '${reference.model}', key: '${reference.key}'},`;
                     continue;
                 }
                 if (inside_attr === 'onDelete' || inside_attr === 'onUpdate') {

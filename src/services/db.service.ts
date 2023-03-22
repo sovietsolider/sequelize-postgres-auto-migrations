@@ -22,11 +22,12 @@ export class DbService {
         let upString: string = '';
         let downString: string = '';
         let orderToAdd: Array<string> = [];
+        console.log(schema_tables)
         for(const table of tables) {
             orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
         }
         if(orderToAdd.length > 1)
-            orderToAdd.sort(this.compareTablesByReferences);
+            orderToAdd.sort(this.compareTablesByReferencesInModel);
         console.log("SORTED ADDING")
         console.log(orderToAdd);
         let addTablesStrings: { [x:string]: string } = {}
@@ -63,7 +64,7 @@ export class DbService {
         return Promise.resolve({ upString, downString });
     }
 
-    private static compareTablesByReferences(table1_name_str: string, table2_name_str: string) {
+    private static compareTablesByReferencesInModel(table1_name_str: string, table2_name_str: string) {
         let table1_name: {table_schema:string, table_name: string} = JSON.parse(table1_name_str);
         let table2_name: {table_schema:string, table_name: string} = JSON.parse(table2_name_str);
         let table1 = ModelService.getModelByTableName(sequelize, table1_name.table_name, table1_name.table_schema);
@@ -89,7 +90,33 @@ export class DbService {
         }
         return 0;
     }
-    
+
+    private static compareTablesByReferencesInDb(tables_for_cmp_func: {[x:string]: TableToModel}) {
+        return function(table1_name_str: string, table2_name_str: string) {
+            let table1_name: {table_schema:string, table_name: string} = JSON.parse(table1_name_str);
+            let table2_name: {table_schema:string, table_name: string} = JSON.parse(table2_name_str);
+            let table1_attrs = tables_for_cmp_func[table1_name_str];
+            let table2_attrs = tables_for_cmp_func[table2_name_str];
+            for(const attr1 in table1_attrs) {
+                if(table1_attrs[attr1].references) {
+                    let attr1_references = StringsGeneratorService.getModelReference(table1_attrs[attr1].references as {model: { tableName: string; schema: string } | string;key: string;});
+                    if(table1_attrs[attr1].references && (attr1_references.model.tableName === table2_name.table_name
+                        && attr1_references.model.schema === table2_name.table_schema))
+                            return -1;
+                }
+            }
+            for(const attr2 in table2_attrs) {
+                if(table2_attrs[attr2].references) {
+                    let attr2_references = StringsGeneratorService.getModelReference(table2_attrs[attr2].references as {model: { tableName: string; schema: string } | string;key: string;});
+                    if((attr2_references.model.tableName === table1_name.table_name
+                        && attr2_references.model.schema === table1_name.table_schema))
+                            return 1;
+                }
+                
+            }
+            return 0;
+        }
+    }    
 
     static async deleteMissingTablesFromDb(
         sequelize: Sequelize,
@@ -98,6 +125,19 @@ export class DbService {
     ): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
+        let orderToDelete: Array<string> = [];
+        let tables_for_cmp_funct: {[x:string]: TableToModel} = {};
+        for(const table of schema_tables) {
+            if(table.table_name !== 'SequelizeMeta') {
+                tables_for_cmp_funct[JSON.stringify({table_schema: table.table_schema, table_name: table.table_name})] = await this.tableToModelInfo(sequelize, table.table_schema, table.table_name);
+                orderToDelete.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
+            }
+        }
+        if(orderToDelete.length > 1) {
+            orderToDelete.sort(this.compareTablesByReferencesInDb(tables_for_cmp_funct));
+        }
+        console.log("SORTED DELETING")
+        console.log(orderToDelete)
         for (const schema_table of schema_tables) {
             if (schema_table.table_name != 'SequelizeMeta') {
                 if (

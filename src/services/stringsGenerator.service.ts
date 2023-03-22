@@ -1,5 +1,5 @@
 import { Sequelize, Model, ModelCtor } from 'sequelize-typescript';
-import { ModelAttributeColumnOptions } from 'sequelize';
+import { ModelAttributeColumnOptions, WhereOptions } from 'sequelize';
 import {
     SchemaColumns,
     SchemaColumnType,
@@ -9,6 +9,7 @@ import {
 } from '../common/interfaces';
 import { ModelService } from './model.service';
 import { DbService } from './db.service';
+import { IndexesOptions } from 'sequelize';
 
 export class StringsGeneratorService {
     static async getStringsToChangeTable(
@@ -156,7 +157,7 @@ export class StringsGeneratorService {
             tableInModel,
             tableInDb,
         ).res_down_string.add_constr_string; //добавление ограничений
-        this.compareIndexesConstraints(table_schema, table_name, tableInModel, tableInDb);
+        this.getStringOfIndexes(table_schema, table_name, tableInModel, tableInDb, sequelize);
 
         return Promise.resolve({
             upString: res_string.up_string,
@@ -430,18 +431,89 @@ export class StringsGeneratorService {
         return { res_up_string, res_down_string };
     }
 
-    private static async compareIndexesConstraints(
+    private static async getStringOfIndexes(
         table_schema: string,
         table_name: string,
         tableInModel: {
             readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
         },
         tableInDb: TableToModel,
+        sequelize: Sequelize
     ) { 
-        let db_indexes = (await DbService.getTableIndexes(table_schema, table_name)).at(0);
+        let res_string: { up_string: string, down_string: string} = { up_string: '', down_string: ''};
+        let db_indexes: {tableName: string, indexName: string, indexeDef: string}[] = (await DbService.getTableIndexes(table_schema, table_name)).at(0) as {tableName: string, indexName: string, indexeDef: string}[];
+        let curr_model = ModelService.getModelByTableName(sequelize, table_name, table_schema);
+        for(const model_index of curr_model.options.indexes as IndexesOptions[]) {
+            if (!db_indexes.find((element) => element.indexName === model_index.name)) {
+                // добавляем индекс
+            }
+            else {
+                //пересоздаем индекс
+            } 
+        }
+        for(const db_index of db_indexes) {
+            if (!((curr_model.options.indexes as IndexesOptions[]).find((element) => element.name === db_index.indexName))) {
+                // удаляем индекс
+            }
+        }
+
         console.log("INDEXES")
-        console.log(tableInModel)
-        console.log(db_indexes);
+        console.log(this.getQueryCreateIndexString(table_name, table_schema, ModelService.getModelByTableName(sequelize, table_name, table_schema), sequelize));
+    }
+    
+    private static getQueryCreateIndexString(table_name: string, table_schema: string, model: ModelCtor<Model<any, any>>, sequelize: Sequelize) {
+        let index_strings: { [x: string]: string } = {};
+        let model_indexes: readonly IndexesOptions[] = model.options.indexes as IndexesOptions[];
+        for(const index of model_indexes) {
+            index_strings[index.name as string] = '';  
+            index_strings[index.name as string] += `CREATE `;
+            if(index.unique) 
+                index_strings[index.name as string] += `UNIQUE `;
+            index_strings[index.name as string] += `INDEX "${index.name}" ON "${table_schema}"."${table_name}" `;
+            if(index.using === undefined)
+                index_strings[index.name as string] += `USING BTREE `;
+            else
+                index_strings[index.name as string] += `USING ${index.using} (`;
+            if(typeof index.fields === typeof '') {
+                index_strings[index.name as string] += `${index.fields})`
+            }
+            else {
+                for(const [i, field] of (index.fields as {
+                    name: string;
+                    length?: number | undefined;
+                    order?: "ASC" | "DESC" | undefined;
+                    collate?: string | undefined;
+                    operator?: string | undefined;
+                }[]).entries()) {
+                    let tmp_field = field as {
+                        name: string;
+                        length?: number | undefined;
+                        order?: "ASC" | "DESC" | undefined;
+                        collate?: string | undefined;
+                        operator?: string | undefined;
+                    }
+                    index_strings[index.name as string] += `"${tmp_field.name}" `;
+                    if(tmp_field.collate)
+                        index_strings[index.name as string] += `COLLATE "${tmp_field.collate}" `;
+                    if(tmp_field.operator)
+                        index_strings[index.name as string] += `${tmp_field.operator} `;
+                    if(tmp_field.order)
+                        index_strings[index.name as string] += `${tmp_field.order} `;
+                    if(i !== index.fields?.length as number - 1)
+                        index_strings[index.name as string] += `, `;
+                }
+            }
+            index_strings[index.name as string] += `) `;
+            index_strings[index.name as string] += sequelize.literal('col1 > 2'); //here
+
+            if(index.where) {
+                index_strings[index.name as string] += `WHERE (`;
+                for(const i in index.where) {
+                }
+                index_strings[index.name as string] += `)`;
+            }
+        }
+        return index_strings;
     }
 
     private static getConstraintNameOfCompositeKey(
