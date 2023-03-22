@@ -14,6 +14,7 @@ export class FileService {
             .slice(0, -3)}-${migrationName}`;
     }
     static writeToMigrationFile(path: string, content: string) {
+        console.log(content)
         try {
             fs.appendFileSync(path, content);
         } catch (error) {

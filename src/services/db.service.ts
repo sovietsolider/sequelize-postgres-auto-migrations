@@ -1,5 +1,5 @@
 import { Sequelize, Model, ModelCtor,  } from 'sequelize-typescript';
-import { modelInfoType, TableToModel } from '../common/interfaces';
+import { MigrationOptions, modelInfoType, TableToModel } from '../common/interfaces';
 import { ModelAttributeColumnReferencesOptions } from "sequelize"
 import {
     sqlToSeqTypes,
@@ -22,14 +22,29 @@ export class DbService {
         let upString: string = '';
         let downString: string = '';
         let orderToAdd: Array<string> = [];
+        let referenced_tables: Array<string> = [];
         console.log(schema_tables)
         for(const table of tables) {
+            let curr_model = ModelService.getModelByTableName(sequelize, table.table_name, table.table_schema).getAttributes();
+            for(const col in curr_model) {
+                if(curr_model[col].references) {
+                    let curr_ref = StringsGeneratorService.getModelReference(curr_model[col].references as {
+                        model: string | {
+                            tableName: string;
+                            schema: string;
+                        };
+                        key: string;
+                    });
+                    referenced_tables.push(JSON.stringify({table_schema: curr_ref.model.schema, table_name: curr_ref.model.tableName}));
+                }
+            }
             orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
         }
         if(orderToAdd.length > 1)
             orderToAdd.sort(this.compareTablesByReferencesInModel);
         console.log("SORTED ADDING")
         console.log(orderToAdd);
+        console.log(referenced_tables)
         let addTablesStrings: { [x:string]: string } = {}
         for (const table of tables) {
             if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
@@ -44,9 +59,14 @@ export class DbService {
                     table?.table_name,
                     table.table_schema
                 );
+                let is_cascade = false;
+                    if(referenced_tables.includes(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}))) {
+                        is_cascade = true;
+                }
                 downString += StringsGeneratorService.getUpStringToDeleteTable(
                     table?.table_schema,
                     table?.table_name,
+                    is_cascade
                 );
             } else {
                 let change_column_strings = await StringsGeneratorService.getStringsToChangeTable(
@@ -61,6 +81,7 @@ export class DbService {
         for(const tableToAdd of orderToAdd) {
             upString += addTablesStrings[tableToAdd];
         }
+        console.log(upString, downString)
         return Promise.resolve({ upString, downString });
     }
 
@@ -127,12 +148,21 @@ export class DbService {
         let downString: string = '';
         let orderToDelete: Array<string> = [];
         let tables_for_cmp_funct: {[x:string]: TableToModel} = {};
+        let referenced_tables: Array<string> = [];
         for(const table of schema_tables) {
             if(table.table_name !== 'SequelizeMeta') {
-                tables_for_cmp_funct[JSON.stringify({table_schema: table.table_schema, table_name: table.table_name})] = await this.tableToModelInfo(sequelize, table.table_schema, table.table_name);
+                let curr_table_info = await this.tableToModelInfo(sequelize, table.table_schema, table.table_name);
+                for(const col in curr_table_info) {
+                    if(curr_table_info[col].references) {
+                        referenced_tables.push(JSON.stringify({table_schema: curr_table_info[col].references.model.schema, table_name: curr_table_info[col].references.model.tableName}));
+                    }
+                }
+                tables_for_cmp_funct[JSON.stringify({table_schema: table.table_schema, table_name: table.table_name})] = curr_table_info
                 orderToDelete.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
             }
         }
+        console.log('REFERENCED TABLES')
+        console.log(referenced_tables);
         if(orderToDelete.length > 1) {
             orderToDelete.sort(this.compareTablesByReferencesInDb(tables_for_cmp_funct));
         }
@@ -148,15 +178,22 @@ export class DbService {
                     )
                 ) {
                     //upString
+                    let is_cascade = false;
+                    if(referenced_tables.includes(JSON.stringify({table_schema: schema_table.table_schema, table_name: schema_table.table_name}))) {
+                        is_cascade = true;
+                    }
                     upString += StringsGeneratorService.getUpStringToDeleteTable(
                         schema_table.table_schema,
                         schema_table.table_name,
+                        is_cascade
                     );
                     //downString
+                    
                     downString += await StringsGeneratorService.getDownStringToAddTable(
                         sequelize,
                         schema_table.table_schema,
                         schema_table.table_name,
+                        //referenced tables
                     );
                 }
             }

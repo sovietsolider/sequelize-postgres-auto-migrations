@@ -157,3 +157,8 @@ export const WhereToSql = {
     '[Op.substring]': 'LIKE',                   // LIKE '%hat%'
     '[Op.any]': 'ANY',                        // ANY (ARRAY[2, 3]::INTEGER[]) (PG only)
 }
+
+export interface MigrationOptions {
+    dropTableOnDelete: string|undefined;
+
+}

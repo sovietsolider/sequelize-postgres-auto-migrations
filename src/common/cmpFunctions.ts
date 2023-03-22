@@ -6,8 +6,9 @@ import { modelInfoType } from './interfaces';
 import { FileService } from '../services/file.service';
 import { StringsGeneratorService } from '../services/stringsGenerator.service';
 import * as beautifier from 'js-beautify';
+import { MigrationOptions } from './interfaces';
 
-export async function compareTables(sequelize: Sequelize, pathToMigrationFile: string) {
+export async function compareTables(sequelize: Sequelize, pathToMigrationFile: string, migration_options: MigrationOptions|undefined) {
     const schema_info_tables = await sequelize.query(
         "SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema!='pg_catalog' AND table_schema!='information_schema'",
     );
@@ -32,8 +33,10 @@ export async function compareTables(sequelize: Sequelize, pathToMigrationFile: s
     final_string += delete_string.downString;
     final_string += '});},};';
     //final_string = final_string.replace(/[\r\n]+/g, '');
-
+    console.log("STRINGS")
+    console.log(final_string)
     final_string = beautifier.js_beautify(final_string); //    .format(final_string, { semi: false, parser: "babel" })
+    
     FileService.writeToMigrationFile(pathToMigrationFile, final_string);
     //FileService.writeToMigrationFile(pathToMigrationFile, add_strings.upString);
 

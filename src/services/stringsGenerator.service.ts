@@ -6,6 +6,7 @@ import {
     sqlToSeqTypes,
     TableToModel,
     ModelAttribute,
+    MigrationOptions,
 } from '../common/interfaces';
 import { ModelService } from './model.service';
 import { DbService } from './db.service';
@@ -618,7 +619,9 @@ export class StringsGeneratorService {
         return Promise.resolve(res_string);
     }
 
-    static getUpStringToDeleteTable(model_schema: string | undefined, table_name: string) {
+    static getUpStringToDeleteTable(model_schema: string | undefined, table_name: string, is_cascade: boolean) {
+        if(is_cascade)
+            return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ cascade: true, transaction: t });`;
         return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ transaction: t });`;
     }
 }

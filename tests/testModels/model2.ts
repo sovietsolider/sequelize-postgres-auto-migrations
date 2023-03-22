@@ -19,7 +19,7 @@ class Model2 extends Model {
   @BelongsTo(() => Model3)
   model3!: Model3
 
-  @BelongsTo(() => Model1)
+  @BelongsTo(() => Model1, {onDelete: 'CASCADE'})
   model1!: Model1
 }
 
