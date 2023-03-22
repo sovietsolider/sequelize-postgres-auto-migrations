@@ -123,7 +123,7 @@ export class DbService {
                     let attr1_references = StringsGeneratorService.getModelReference(table1_attrs[attr1].references as {model: { tableName: string; schema: string } | string;key: string;});
                     if(table1_attrs[attr1].references && (attr1_references.model.tableName === table2_name.table_name
                         && attr1_references.model.schema === table2_name.table_schema))
-                            return -1;
+                            return 1;
                 }
             }
             for(const attr2 in table2_attrs) {
@@ -131,7 +131,7 @@ export class DbService {
                     let attr2_references = StringsGeneratorService.getModelReference(table2_attrs[attr2].references as {model: { tableName: string; schema: string } | string;key: string;});
                     if((attr2_references.model.tableName === table1_name.table_name
                         && attr2_references.model.schema === table1_name.table_schema))
-                            return 1;
+                            return -1;
                 }
                 
             }
@@ -146,9 +146,10 @@ export class DbService {
     ): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
-        let orderToDelete: Array<string> = [];
+        let orderToAdd: Array<string> = [];
         let tables_for_cmp_funct: {[x:string]: TableToModel} = {};
         let referenced_tables: Array<string> = [];
+        let addTablesStrings: { [x:string]: string } = {}
         for(const table of schema_tables) {
             if(table.table_name !== 'SequelizeMeta') {
                 let curr_table_info = await this.tableToModelInfo(sequelize, table.table_schema, table.table_name);
@@ -158,16 +159,15 @@ export class DbService {
                     }
                 }
                 tables_for_cmp_funct[JSON.stringify({table_schema: table.table_schema, table_name: table.table_name})] = curr_table_info
-                orderToDelete.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
+                orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
             }
         }
         console.log('REFERENCED TABLES')
         console.log(referenced_tables);
-        if(orderToDelete.length > 1) {
-            orderToDelete.sort(this.compareTablesByReferencesInDb(tables_for_cmp_funct));
+        if(orderToAdd.length > 1) {
+            orderToAdd.sort(this.compareTablesByReferencesInDb(tables_for_cmp_funct));
         }
-        console.log("SORTED DELETING")
-        console.log(orderToDelete)
+        console.log(orderToAdd)
         for (const schema_table of schema_tables) {
             if (schema_table.table_name != 'SequelizeMeta') {
                 if (
@@ -188,15 +188,19 @@ export class DbService {
                         is_cascade
                     );
                     //downString
-                    
+                    addTablesStrings[JSON.stringify({table_schema: schema_table.table_schema, table_name: schema_table.table_name})] = await StringsGeneratorService.getDownStringToAddTable(
+                        sequelize, schema_table.table_schema, schema_table.table_name
+                    );/*
                     downString += await StringsGeneratorService.getDownStringToAddTable(
                         sequelize,
                         schema_table.table_schema,
                         schema_table.table_name,
-                        //referenced tables
-                    );
+                    );*/
                 }
             }
+        }
+        for(const tableToAdd of orderToAdd) {
+            downString += addTablesStrings[tableToAdd];
         }
         return Promise.resolve({ upString, downString });
     }

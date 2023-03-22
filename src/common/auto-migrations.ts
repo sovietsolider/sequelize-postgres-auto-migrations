@@ -12,6 +12,6 @@ export class AutoMigrations {
 
     async generateMigration(name: string, path: string) {
         let path_ = FileService.generateMigrationFile(name, path);
-        await compareTables(this.seq, path_, this.migration_options);
+        await compareTables(this.seq, path_);
     }
 }

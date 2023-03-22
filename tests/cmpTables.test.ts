@@ -9,6 +9,8 @@ import * as path from 'path'
 let adding_tables_test_res = path.resolve(__dirname, "./migrationsToCompare/adding_tables_test_res.js");
 let deleting_tables_test_res = path.resolve(__dirname, "./migrationsToCompare/deleting_tables_test_res.js");
 let adding_tables_with_fk_res = path.resolve(__dirname, "./migrationsToCompare/adding_tables_with_fk.js");
+let deleting_tables_with_fk_res = path.resolve(__dirname, "./migrationsToCompare/deleting_tables_with_fk.js");
+
 describe('Adding/Deleting tables', () => {
   test('Add table with schema and all properties', async () => {
     let path_ = FileService.generateMigrationFile("test", path.resolve(__dirname, "../migrations"));
@@ -32,6 +34,6 @@ describe('Adding/Deleting tables', () => {
     let path_ = FileService.generateMigrationFile("test", path.resolve(__dirname, "../migrations"));
     path_ = path.resolve(__dirname, path_);
     await compareTables(sequelize_deleting_tables_with_fk, path_);
-    expect(fs.readFileSync(`${path_}`).toString().replace(/\s/g, "")).toBe(fs.readFileSync(adding_tables_with_fk_res).toString().replace(/\s/g, ""))
+    expect(fs.readFileSync(`${path_}`).toString().replace(/\s/g, "")).toBe(fs.readFileSync(deleting_tables_with_fk_res).toString().replace(/\s/g, ""))
   });
 });

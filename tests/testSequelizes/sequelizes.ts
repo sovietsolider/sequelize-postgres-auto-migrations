@@ -49,7 +49,7 @@ export const sequelize_deleting_tables_with_fk = new Sequelize({
     host: "localhost",
     username: 'postgres',
     password: '666666',
-    models: [Model2, Model3, Model1], 
+    models: [], 
     define: {
         freezeTableName: true,
         timestamps: false,
