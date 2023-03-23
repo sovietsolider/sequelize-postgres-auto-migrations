@@ -22,6 +22,7 @@ export class DbService {
         let downString: string = '';
         let orderToAdd: Array<string> = [];
         let referenced_tables: Array<string> = [];
+        let drop_tables_down_string = '';
         let change_column_strings: {
             upString: string;
             downString: string;
@@ -66,7 +67,7 @@ export class DbService {
                     if(referenced_tables.includes(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}))) {
                         is_cascade = true;
                 }
-                downString += StringsGeneratorService.getUpStringToDeleteTable(
+                drop_tables_down_string += StringsGeneratorService.getUpStringToDeleteTable(
                     table?.table_schema,
                     table?.table_name,
                     is_cascade
@@ -89,6 +90,7 @@ export class DbService {
         }
         upString += change_column_strings.upString;
         downString += change_column_strings.downString;
+        downString += drop_tables_down_string;
 
         //console.log(upString, downString)
         return Promise.resolve({ upString, downString });
@@ -459,4 +461,9 @@ export class DbService {
         let res = await sequelize.query(`SELECT tablename as tableName, indexname as indexName,indexdef as indexDef FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`);
         return Promise.resolve(res);
     }
+
+    static async getForeignKeyRules(sequelize: Sequelize, fk_name: string): Promise<{ update_rule: string, delete_rule: string}> {
+        let res = await sequelize.query(`SELECT UPDATE_RULE, DELETE_RULE FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '${fk_name}'`) as unknown as [];
+        return Promise.resolve(res.at(0) as unknown as { update_rule: string, delete_rule: string});
+    } 
 }

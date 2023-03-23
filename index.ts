@@ -6,9 +6,7 @@ import { Model3 } from "./tests/testModels/model3";
 import { DbService } from "./src/services/db.service";
 import { Table, HasMany, ForeignKey, Model } from "sequelize-typescript";
 import { WhereOptions } from "sequelize";
-import { Model4 } from "./tests/testModels/model4";
 import { StringsGeneratorService } from "./src/services/stringsGenerator.service";
-import { Model5 } from "./tests/testModels/model5";
 
 export const sequelize = new Sequelize({
     database: 'empty',
@@ -16,7 +14,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model4, Model1, Model3, Model2, Model5],
+    models: [Model1, Model3, Model2],
     define: {
         freezeTableName: true,
     },

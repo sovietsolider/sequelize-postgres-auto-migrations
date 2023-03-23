@@ -15,7 +15,7 @@ class Model1 extends Model {
     @Column
     check_index!: number;
     
-    @HasOne(() => Model2, {onDelete: 'CASCADE'})
+    @HasOne(() => Model2, {onDelete: 'RESTRICT'})
     model2!: Model2;
 }
 

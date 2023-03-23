@@ -275,7 +275,10 @@ export class StringsGeneratorService {
                     'fkey',
                 )}', {transaction: t});`;
             } else {
-                if (
+                console.log("RULES")
+                console.log(tableInModel[field])
+                console.log(tableInDb[field].onDelete);
+                if ((
                     JSON.stringify(
                         this.getModelReference(
                             tableInModel[field].references as {
@@ -283,7 +286,7 @@ export class StringsGeneratorService {
                                 key: string;
                             },
                         ),
-                    ) !== JSON.stringify(tableInDb[field].references)
+                    ) !== JSON.stringify(tableInDb[field].references)) || (tableInModel[field].onDelete !== tableInDb[field].onDelete) || (tableInModel[field].onUpdate !== tableInDb[field].onUpdate)
                 ) {
                    
                     //console.log(tableInDb[field].references)
