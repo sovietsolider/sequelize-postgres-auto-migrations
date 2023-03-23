@@ -158,7 +158,7 @@ export class StringsGeneratorService {
             tableInModel,
             tableInDb,
         ).res_down_string.add_constr_string; //добавление ограничений
-        this.getStringOfIndexes(table_schema, table_name, tableInModel, tableInDb, sequelize);
+        //this.getStringOfIndexes(table_schema, table_name, tableInModel, tableInDb, sequelize);
 
         return Promise.resolve({
             upString: res_string.up_string,
@@ -194,6 +194,7 @@ export class StringsGeneratorService {
         let fk_db_fields: Array<string> = [];
         let unique_model_fields: Array<string> = [];
         let unique_db_fields: Array<string> = [];
+        console.log(tableInDb)
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;
             if (tableInModel[column].primaryKey) pk_model_fields.push(real_column_name);
@@ -243,7 +244,9 @@ export class StringsGeneratorService {
                 "','",
             )}'], transaction: t});`;
         }
-        //FOREIGN KEYS
+        console.log("FK")
+        console.log(fk_model_fields)
+        console.log(fk_db_fields)
         for (const field of fk_model_fields) {
             //если fk нету в дб -> добавляем
             if (!fk_db_fields.includes(field)) {
@@ -282,6 +285,8 @@ export class StringsGeneratorService {
                         ),
                     ) !== JSON.stringify(tableInDb[field].references)
                 ) {
+                   
+                    //console.log(tableInDb[field].references)
                     let model_ref = this.getModelReference(
                         tableInModel[field].references as {
                             model: { tableName: string; schema: string } | string;
@@ -428,39 +433,40 @@ export class StringsGeneratorService {
                 ].join("','")}'],type: 'UNIQUE',name: '${constr_name}',transaction: t,});`;
             }
         }
-
+        console.log("CONSTRAINTS RESULT")
+        console.log(res_up_string, res_down_string)
         return { res_up_string, res_down_string };
     }
 
-    private static async getStringOfIndexes(
-        table_schema: string,
-        table_name: string,
-        tableInModel: {
-            readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
-        },
-        tableInDb: TableToModel,
-        sequelize: Sequelize
-    ) { 
-        let res_string: { up_string: string, down_string: string} = { up_string: '', down_string: ''};
-        let db_indexes: {tableName: string, indexName: string, indexeDef: string}[] = (await DbService.getTableIndexes(table_schema, table_name)).at(0) as {tableName: string, indexName: string, indexeDef: string}[];
-        let curr_model = ModelService.getModelByTableName(sequelize, table_name, table_schema);
-        for(const model_index of curr_model.options.indexes as IndexesOptions[]) {
-            if (!db_indexes.find((element) => element.indexName === model_index.name)) {
-                // добавляем индекс
-            }
-            else {
-                //пересоздаем индекс
-            } 
-        }
-        for(const db_index of db_indexes) {
-            if (!((curr_model.options.indexes as IndexesOptions[]).find((element) => element.name === db_index.indexName))) {
-                // удаляем индекс
-            }
-        }
+    // private static async getStringOfIndexes(
+    //     table_schema: string,
+    //     table_name: string,
+    //     tableInModel: {
+    //         readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
+    //     },
+    //     tableInDb: TableToModel,
+    //     sequelize: Sequelize
+    // ) { 
+    //     let res_string: { up_string: string, down_string: string} = { up_string: '', down_string: ''};
+    //     let db_indexes: {tableName: string, indexName: string, indexeDef: string}[] = (await DbService.getTableIndexes(table_schema, table_name)).at(0) as {tableName: string, indexName: string, indexeDef: string}[];
+    //     let curr_model = ModelService.getModelByTableName(sequelize, table_name, table_schema);
+    //     for(const model_index of curr_model.options.indexes as IndexesOptions[]) {
+    //         if (!db_indexes.find((element) => element.indexName === model_index.name)) {
+    //             // добавляем индекс
+    //         }
+    //         else {
+    //             //пересоздаем индекс
+    //         } 
+    //     }
+    //     for(const db_index of db_indexes) {
+    //         if (!((curr_model.options.indexes as IndexesOptions[]).find((element) => element.name === db_index.indexName))) {
+    //             // удаляем индекс
+    //         }
+    //     }
 
-        console.log("INDEXES")
-        console.log(this.getQueryCreateIndexString(table_name, table_schema, ModelService.getModelByTableName(sequelize, table_name, table_schema), sequelize));
-    }
+    //     console.log("INDEXES")
+    //     console.log(this.getQueryCreateIndexString(table_name, table_schema, ModelService.getModelByTableName(sequelize, table_name, table_schema), sequelize));
+    // }
     
     private static getQueryCreateIndexString(table_name: string, table_schema: string, model: ModelCtor<Model<any, any>>, sequelize: Sequelize) {
         let index_strings: { [x: string]: string } = {};
@@ -605,6 +611,7 @@ export class StringsGeneratorService {
             options.unique_name = undefined;
             options.fk_name = undefined;
             options.pk_name = undefined;
+            options.foreignKey = undefined;
             res_string += `${JSON.stringify(options)}, `;
             res_string = res_string.replace(
                 /"\btype":"Sequelize.\b[^"]*"/g,

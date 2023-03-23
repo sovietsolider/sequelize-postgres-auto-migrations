@@ -17,10 +17,8 @@ import { compareTables } from './common/cmpFunctions';
 //import { ArrayTypeModel, EnumTypeModel } from '../tests/testModels';
 import { FileService } from './services/file.service';
 import { DbService } from './services/db.service';
-import { Model1 } from '../tests/testModels/model1';
-import { Model2 } from '../tests/testModels/model2';
-import { Model3 } from '../tests/testModels/model3';
 
+/*
 export const sequelize = new Sequelize({
     database: 'test',
     dialect: 'postgres',
@@ -43,3 +41,4 @@ export const sequelize = new Sequelize({
     //let path = FileService.generateMigrationFile('add-new', '../migrations');
     //await compareTables(sequelize, path);
 })();
+*/

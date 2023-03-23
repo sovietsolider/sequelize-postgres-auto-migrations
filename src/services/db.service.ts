@@ -10,7 +10,6 @@ import {
 } from '../common/interfaces';
 import { StringsGeneratorService } from './stringsGenerator.service';
 import { ModelService } from './model.service';
-import { sequelize } from '../main';
 const pg_magic_round = 4;
 
 export class DbService {
@@ -23,6 +22,10 @@ export class DbService {
         let downString: string = '';
         let orderToAdd: Array<string> = [];
         let referenced_tables: Array<string> = [];
+        let change_column_strings: {
+            upString: string;
+            downString: string;
+        } = {upString: '', downString: ''};
         console.log(schema_tables)
         for(const table of tables) {
             let curr_model = ModelService.getModelByTableName(sequelize, table.table_name, table.table_schema).getAttributes();
@@ -41,10 +44,10 @@ export class DbService {
             orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
         }
         if(orderToAdd.length > 1)
-            orderToAdd.sort(this.compareTablesByReferencesInModel);
-        console.log("SORTED ADDING")
-        console.log(orderToAdd);
-        console.log(referenced_tables)
+            orderToAdd.sort(this.cmpTablesByRefInModel(sequelize));
+        //console.log("SORTED ADDING")
+        //console.log(orderToAdd);
+        //console.log(referenced_tables)
         let addTablesStrings: { [x:string]: string } = {}
         for (const table of tables) {
             if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
@@ -69,47 +72,54 @@ export class DbService {
                     is_cascade
                 );
             } else {
-                let change_column_strings = await StringsGeneratorService.getStringsToChangeTable(
+                let tmp_change_str = await StringsGeneratorService.getStringsToChangeTable(
                     sequelize,
                     table.table_schema,
                     table.table_name,
                 );
-                upString += change_column_strings.upString;
-                downString += change_column_strings.downString;
+                change_column_strings.upString += tmp_change_str.upString;
+                change_column_strings.downString += tmp_change_str.downString;
+                
             }
         }
         for(const tableToAdd of orderToAdd) {
-            upString += addTablesStrings[tableToAdd];
+            if(addTablesStrings[tableToAdd]) {
+                upString += addTablesStrings[tableToAdd];
+            }
         }
-        console.log(upString, downString)
+        upString += change_column_strings.upString;
+        downString += change_column_strings.downString;
+
+        //console.log(upString, downString)
         return Promise.resolve({ upString, downString });
     }
-
-    private static compareTablesByReferencesInModel(table1_name_str: string, table2_name_str: string) {
-        let table1_name: {table_schema:string, table_name: string} = JSON.parse(table1_name_str);
-        let table2_name: {table_schema:string, table_name: string} = JSON.parse(table2_name_str);
-        let table1 = ModelService.getModelByTableName(sequelize, table1_name.table_name, table1_name.table_schema);
-        let table2 = ModelService.getModelByTableName(sequelize, table2_name.table_name, table2_name.table_schema);
-        let table1_attrs = table1.getAttributes();
-        let table2_attrs = table2.getAttributes();
-        for(const attr1 in table1_attrs) {
-            if(table1_attrs[attr1].references) {
-                let attr1_references = StringsGeneratorService.getModelReference(table1_attrs[attr1].references as {model: { tableName: string; schema: string } | string;key: string;});
-                if(table1_attrs[attr1].references && (attr1_references.model.tableName === table2_name.table_name
-                    && attr1_references.model.schema === table2_name.table_schema))
-                        return 1;
+    private static cmpTablesByRefInModel(sequelize: Sequelize) {
+        return function compareTablesByReferencesInModel(table1_name_str: string, table2_name_str: string) {
+            let table1_name: {table_schema:string, table_name: string} = JSON.parse(table1_name_str);
+            let table2_name: {table_schema:string, table_name: string} = JSON.parse(table2_name_str);
+            let table1 = ModelService.getModelByTableName(sequelize, table1_name.table_name, table1_name.table_schema);
+            let table2 = ModelService.getModelByTableName(sequelize, table2_name.table_name, table2_name.table_schema);
+            let table1_attrs = table1.getAttributes();
+            let table2_attrs = table2.getAttributes();
+            for(const attr1 in table1_attrs) {
+                if(table1_attrs[attr1].references) {
+                    let attr1_references = StringsGeneratorService.getModelReference(table1_attrs[attr1].references as {model: { tableName: string; schema: string } | string;key: string;});
+                    if(table1_attrs[attr1].references && (attr1_references.model.tableName === table2_name.table_name
+                        && attr1_references.model.schema === table2_name.table_schema))
+                            return 1;
+                }
             }
-        }
-        for(const attr2 in table2_attrs) {
-            if(table2_attrs[attr2].references) {
-                let attr2_references = StringsGeneratorService.getModelReference(table2_attrs[attr2].references as {model: { tableName: string; schema: string } | string;key: string;});
-                if((attr2_references.model.tableName === table1_name.table_name
-                    && attr2_references.model.schema === table1_name.table_schema))
-                        return -1;
+            for(const attr2 in table2_attrs) {
+                if(table2_attrs[attr2].references) {
+                    let attr2_references = StringsGeneratorService.getModelReference(table2_attrs[attr2].references as {model: { tableName: string; schema: string } | string;key: string;});
+                    if((attr2_references.model.tableName === table1_name.table_name
+                        && attr2_references.model.schema === table1_name.table_schema))
+                            return -1;
+                }
+                
             }
-            
+            return 0;
         }
-        return 0;
     }
 
     private static compareTablesByReferencesInDb(tables_for_cmp_func: {[x:string]: TableToModel}) {
@@ -162,12 +172,12 @@ export class DbService {
                 orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
             }
         }
-        console.log('REFERENCED TABLES')
-        console.log(referenced_tables);
+        //console.log('REFERENCED TABLES')
+        //console.log(referenced_tables);
         if(orderToAdd.length > 1) {
             orderToAdd.sort(this.compareTablesByReferencesInDb(tables_for_cmp_funct));
         }
-        console.log(orderToAdd)
+        //console.log(orderToAdd)
         for (const schema_table of schema_tables) {
             if (schema_table.table_name != 'SequelizeMeta') {
                 if (
@@ -200,7 +210,11 @@ export class DbService {
             }
         }
         for(const tableToAdd of orderToAdd) {
-            downString += addTablesStrings[tableToAdd];
+            if(addTablesStrings[tableToAdd]) {
+                console.log(tableToAdd)
+                console.log(addTablesStrings[tableToAdd])
+                downString += addTablesStrings[tableToAdd];
+            }
         }
         return Promise.resolve({ upString, downString });
     }
@@ -263,7 +277,7 @@ export class DbService {
                 `${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`,
             )
         ).at(0) as unknown as SchemaTableColumnsConstraints[];
-        console.log(schema_table_columns_constraints);
+        //console.log(schema_table_columns_constraints);
         const pg_types: any = await sequelize.query(
             DbService.getPgColumnsInfo(table_schema, table_name),
         );
@@ -437,12 +451,11 @@ export class DbService {
                  ) t \
          ) AS ccu \
         on ccu.constraint_name = tc.constraint_name \
-         and ccu.table_schema = tc.table_schema \
         and ccu.ordinal_position = kcu.ordinal_position \
         where tc.table_name = '${table_name}' AND tc.table_schema = '${table_schema}';`;
     }
 
-    static async getTableIndexes(table_schema: string, table_name: string) {
+    static async getTableIndexes(table_schema: string, table_name: string, sequelize: Sequelize) {
         let res = await sequelize.query(`SELECT tablename as tableName, indexname as indexName,indexdef as indexDef FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`);
         return Promise.resolve(res);
     }

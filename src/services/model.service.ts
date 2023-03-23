@@ -1,6 +1,7 @@
 import { Sequelize } from 'sequelize';
 import { ModelAttributeColumnOptions } from 'sequelize';
 import { Model, ModelCtor } from 'sequelize-typescript';
+import { StringsGeneratorService } from './stringsGenerator.service';
 
 export class ModelService {
     static getModelByTableName(
@@ -114,11 +115,14 @@ export class ModelService {
                     )},`;
                 }
                 if (inside_attr === 'references') {
-                    let reference = description[attr][inside_attr] as {
-                        model: string;
+                    let reference = StringsGeneratorService.getModelReference(description[attr][inside_attr] as {
+                        model: string | {
+                            tableName: string;
+                            schema: string;
+                        };
                         key: string;
-                    };
-                    res_string += `${inside_attr}: { model: '${reference.model}', key: '${reference.key}'},`;
+                    });
+                    res_string += `${inside_attr}: { model: {tableName: '${reference.model.tableName}', schema: '${reference.model.schema}'}, key: '${reference.key}'},`;
                     continue;
                 }
                 if (inside_attr === 'onDelete' || inside_attr === 'onUpdate') {
@@ -152,6 +156,10 @@ export class ModelService {
             'values',
             'unique',
             'primaryKey',
+            'name',
+            'references', 
+            'onUpdate',
+            'onDelete'
         ];
         let res_string = '';
         for (const inside_attr in description[attr]) {
@@ -168,10 +176,10 @@ export class ModelService {
                 res_string += `${inside_attr}: { model: "${reference.model}", key: "${reference.key}"},`;
                 continue;
             }*/
-            if (inside_attr === 'onDelete' || inside_attr === 'onUpdate') {
+            /*if (inside_attr === 'onDelete' || inside_attr === 'onUpdate') {
                 res_string += `${inside_attr}: "${description[attr][inside_attr]}",`;
                 continue;
-            }
+            }*/
             if (!attrs_to_except.includes(inside_attr)) {
                 res_string += `${inside_attr}: ${description[attr][inside_attr as keyof object]},`;
             }

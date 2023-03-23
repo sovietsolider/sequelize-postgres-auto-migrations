@@ -8,14 +8,15 @@ import { Table, HasMany, ForeignKey, Model } from "sequelize-typescript";
 import { WhereOptions } from "sequelize";
 import { Model4 } from "./tests/testModels/model4";
 import { StringsGeneratorService } from "./src/services/stringsGenerator.service";
+import { Model5 } from "./tests/testModels/model5";
 
 export const sequelize = new Sequelize({
-    database: 'delete_fk_tables',
+    database: 'empty',
     dialect: 'postgres',
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [/*Model2, Model3, Model1*/],
+    models: [Model4, Model1, Model3, Model2, Model5],
     define: {
         freezeTableName: true,
     },
