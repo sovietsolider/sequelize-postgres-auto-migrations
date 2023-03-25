@@ -127,8 +127,8 @@ export class StringsGeneratorService {
             up_string: '',
             down_string: '',
         };
-        let index_strings = await this.getStringOfIndexes(table_schema, table_name, tableInModel, tableInDb, sequelize);
-        res_string.up_string += index_strings.up_string.remove_index_string;
+        //let index_strings = await this.getStringOfIndexes(table_schema, table_name, sequelize);
+        //res_string.up_string += index_strings.up_string.remove_index_string;
         res_string.up_string += this.comparePkConstraint(
             table_schema,
             table_name,
@@ -138,7 +138,7 @@ export class StringsGeneratorService {
         res_string.up_string += up_string.remove_column_string; //удаление атрибутов
         res_string.up_string += up_string.add_column_string; //добавление атрибутов
         res_string.up_string += up_string.change_column_string; //изменение атрибутов
-        res_string.up_string += index_strings.up_string.add_index_string; //добавление индексов
+        //res_string.up_string += index_strings.up_string.add_index_string; //добавление индексов
         res_string.up_string += this.comparePkConstraint(
             table_schema,
             table_name,
@@ -146,7 +146,7 @@ export class StringsGeneratorService {
             tableInDb,
         ).res_up_string.add_constr_string; //добавление ограничений
         
-        res_string.down_string += index_strings.down_string.remove_index_string; //удаление индексов
+        //res_string.down_string += index_strings.down_string.remove_index_string; //удаление индексов
         res_string.down_string += this.comparePkConstraint(
             table_schema,
             table_name,
@@ -156,14 +156,13 @@ export class StringsGeneratorService {
         res_string.down_string += down_string.remove_column_string; //удаление атрибутов
         res_string.down_string += down_string.add_column_string; //добавление атрибутов
         res_string.down_string += down_string.change_column_string; //изменение атрибутов
-        res_string.down_string += index_strings.down_string.add_index_string; //добавление индексов
+        //res_string.down_string += index_strings.down_string.add_index_string; //добавление индексов
         res_string.down_string += this.comparePkConstraint(
             table_schema,
             table_name,
             tableInModel,
             tableInDb,
         ).res_down_string.add_constr_string; //добавление ограничений
-        this.getStringOfIndexes(table_schema, table_name, tableInModel, tableInDb, sequelize);
 
         return Promise.resolve({
             upString: res_string.up_string,
@@ -446,13 +445,9 @@ export class StringsGeneratorService {
         return { res_up_string, res_down_string };
     }
 
-    private static async getStringOfIndexes(
+    static async getStringOfIndexes(
          table_schema: string,
          table_name: string,
-         tableInModel: {
-             readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
-         },
-         tableInDb: TableToModel,
          sequelize: Sequelize
      ) { 
         let up_string: {
@@ -501,6 +496,9 @@ export class StringsGeneratorService {
                 down_string.add_index_string += `await queryInterface.sequelize.query('${db_indexes[db_index].indexDef}');`
             }
         }
+        console.log("GET INDEXES STRINGS")
+        console.log(up_string)
+        console.log(down_string)
         return {up_string, down_string};
     }
     
@@ -550,6 +548,7 @@ export class StringsGeneratorService {
             index_strings[index.name as string] = index_strings[index.name as string].replace(/\s|"/g, "");
             
         }
+        console.log("FINAL INDEX STRING")
         return index_strings;
     }
 

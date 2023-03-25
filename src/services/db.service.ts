@@ -17,7 +17,7 @@ export class DbService {
         sequelize: Sequelize,
         schema_tables: Array<any>,
         tables: modelInfoType[],
-    ): Promise<{ upString: string; downString: string }> {
+    ): Promise<{ upString: string; downString: string, addIndexesDownString:string[] }> {
         let upString: string = '';
         let downString: string = '';
         let orderToAdd: Array<string> = [];
@@ -27,6 +27,16 @@ export class DbService {
             upString: string;
             downString: string;
         } = {upString: '', downString: ''};
+        let index_strings:Array<{
+            up_string: {
+                add_index_string: string;
+                remove_index_string: string;
+            };
+            down_string: {
+                add_index_string: string;
+                remove_index_string: string;
+            };
+        }> = []
         console.log(schema_tables)
         for(const table of tables) {
             let curr_model = ModelService.getModelByTableName(sequelize, table.table_name, table.table_schema).getAttributes();
@@ -46,11 +56,11 @@ export class DbService {
         }
         if(orderToAdd.length > 1)
             orderToAdd.sort(this.cmpTablesByRefInModel(sequelize));
-        //console.log("SORTED ADDING")
-        //console.log(orderToAdd);
-        //console.log(referenced_tables)
         let addTablesStrings: { [x:string]: string } = {}
         for (const table of tables) {
+            console.log("table before index")
+            console.log(table)
+            index_strings.push(await StringsGeneratorService.getStringOfIndexes(table.table_schema, table.table_name, sequelize));
             if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
                 let curr_model = ModelService.getModelByTableName(
                     sequelize,
@@ -83,17 +93,37 @@ export class DbService {
                 
             }
         }
+        
         for(const tableToAdd of orderToAdd) {
             if(addTablesStrings[tableToAdd]) {
                 upString += addTablesStrings[tableToAdd];
+                //upString += StringsGeneratorService.getStringOfIndexes(JSON.parse()) ///
             }
         }
+        console.log("UNDEX")
+            console.log(index_strings)
+        for(const index of index_strings) {
+            
+            upString += index.up_string.add_index_string //adding index
+        } 
+        for(const index of index_strings) {
+            upString += index.up_string.remove_index_string //deleting index
+        }
         upString += change_column_strings.upString;
+               
         downString += change_column_strings.downString;
+        for(const index of index_strings) {
+            downString += index.down_string.remove_index_string; //deleting index down
+        }     
         downString += drop_tables_down_string;
-
+        let addIndexesDownString: Array<string> = [];
+        for(const index of index_strings) {
+            console.log(index)
+            if(index.down_string.add_index_string!=='')
+                addIndexesDownString.push(index.down_string.add_index_string);
+        }
         //console.log(upString, downString)
-        return Promise.resolve({ upString, downString });
+        return Promise.resolve({ upString, downString, addIndexesDownString });
     }
     private static cmpTablesByRefInModel(sequelize: Sequelize) {
         return function compareTablesByReferencesInModel(table1_name_str: string, table2_name_str: string) {
@@ -174,12 +204,10 @@ export class DbService {
                 orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
             }
         }
-        //console.log('REFERENCED TABLES')
-        //console.log(referenced_tables);
+
         if(orderToAdd.length > 1) {
             orderToAdd.sort(this.compareTablesByReferencesInDb(tables_for_cmp_funct));
         }
-        //console.log(orderToAdd)
         for (const schema_table of schema_tables) {
             if (schema_table.table_name != 'SequelizeMeta') {
                 if (
@@ -202,7 +230,8 @@ export class DbService {
                     //downString
                     addTablesStrings[JSON.stringify({table_schema: schema_table.table_schema, table_name: schema_table.table_name})] = await StringsGeneratorService.getDownStringToAddTable(
                         sequelize, schema_table.table_schema, schema_table.table_name
-                    );/*
+                    );
+                    /*
                     downString += await StringsGeneratorService.getDownStringToAddTable(
                         sequelize,
                         schema_table.table_schema,
@@ -213,11 +242,10 @@ export class DbService {
         }
         for(const tableToAdd of orderToAdd) {
             if(addTablesStrings[tableToAdd]) {
-                console.log(tableToAdd)
-                console.log(addTablesStrings[tableToAdd])
                 downString += addTablesStrings[tableToAdd];
             }
         }
+    
         return Promise.resolve({ upString, downString });
     }
 

@@ -1,6 +1,5 @@
 import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, HasOne, Unique, Index, createIndexDecorator } from 'sequelize-typescript';
 import { Model1 } from './model1';
-import { Model3 } from './model3';
 
 const JobIndex = createIndexDecorator({
     // index options
@@ -15,13 +14,30 @@ const JobIndex = createIndexDecorator({
 
 @Table
 class IndexModel extends Model {
-    @Index({unique: true, using: 'hash'})
+    @JobIndex
     @Column
     Ind1!: number;
+    @JobIndex
     @Column
     ind2!: number;
     @Column
     ind3!: number;
+    @Column
+    ind4!: number
 }
 
-export {IndexModel}
+@Table
+class IndexModel2 extends Model {
+    @Index
+    @Column
+    Ind1!: number;
+    @Index
+    @Column
+    ind2!: number;
+    @Column
+    ind3!: number;
+    @Column
+    ind4!: number
+}
+
+export {IndexModel, IndexModel2}

@@ -1,4 +1,4 @@
-import { Sequelize, Model, ModelCtor } from 'sequelize-typescript';
+import { Sequelize, Model, ModelCtor, addFieldToIndex } from 'sequelize-typescript';
 import { sqlToSeqTypes, SchemaColumns, TableToModel } from './interfaces';
 import { DbService } from '../services/db.service';
 import { ModelService } from '../services/model.service';
@@ -18,7 +18,7 @@ export async function compareTables(sequelize: Sequelize, pathToMigrationFile: s
     ) as unknown as modelInfoType[];
     //console.log(schema_tables);
     //console.log(tables);
-    let add_strings: { upString: string; downString: string } =
+    let add_strings: { upString: string; downString: string, addIndexesDownString: string[] } =
         await DbService.addMissingTablesToDb(sequelize, schema_tables, tables); //adding tables
     let delete_string: { upString: string; downString: string } =
         await DbService.deleteMissingTablesFromDb(sequelize, schema_tables, tables); //deleting tables
@@ -30,19 +30,12 @@ export async function compareTables(sequelize: Sequelize, pathToMigrationFile: s
     final_string +=
         '});},down: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
     final_string += add_strings.downString;
+    final_string += add_strings.addIndexesDownString;
+    console.log("DAUN")
+    console.log(add_strings.addIndexesDownString)
     final_string += delete_string.downString;
     final_string += '});},};';
-    //final_string = final_string.replace(/[\r\n]+/g, '');
-    final_string = beautifier.js_beautify(final_string); //    .format(final_string, { semi: false, parser: "babel" })
+    final_string = beautifier.js_beautify(final_string); 
     FileService.writeToMigrationFile(pathToMigrationFile, final_string);
-    //FileService.writeToMigrationFile(pathToMigrationFile, add_strings.upString);
-    //console.log("RES STRINGS")
-    //console.log(add_strings)
-    //console.log(delete_string)
-    //FileService.writeToMigrationFile(pathToMigrationFile, delete_string.upString);
-    //FileService.writeToMigrationFile(pathToMigrationFile, '});},');
-    //FileService.writeToMigrationFile(pathToMigrationFile, 'down: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {');
-    //FileService.writeToMigrationFile(pathToMigrationFile, add_strings.downString);
-    //FileService.writeToMigrationFile(pathToMigrationFile, delete_string.downString);
-    //FileService.writeToMigrationFile(pathToMigrationFile, '});},};');
+    
 }
