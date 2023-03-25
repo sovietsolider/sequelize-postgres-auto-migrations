@@ -458,12 +458,13 @@ export class DbService {
     }
 
     static async getTableIndexes(table_schema: string, table_name: string, sequelize: Sequelize) {
-        let res = await sequelize.query(`SELECT tablename as tableName, indexname as indexName,indexdef as indexDef FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`);
+        let res = await sequelize.query(`SELECT tablename as "tableName", indexname as "indexName",indexdef as "indexDef" FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`);
         return Promise.resolve(res);
     }
 
     static async getForeignKeyRules(sequelize: Sequelize, fk_name: string): Promise<{ update_rule: string, delete_rule: string}> {
         let res = await sequelize.query(`SELECT UPDATE_RULE, DELETE_RULE FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '${fk_name}'`) as unknown as [];
         return Promise.resolve(res.at(0) as unknown as { update_rule: string, delete_rule: string});
-    } 
+    }
+
 }

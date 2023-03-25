@@ -36,9 +36,9 @@ export async function compareTables(sequelize: Sequelize, pathToMigrationFile: s
     final_string = beautifier.js_beautify(final_string); //    .format(final_string, { semi: false, parser: "babel" })
     FileService.writeToMigrationFile(pathToMigrationFile, final_string);
     //FileService.writeToMigrationFile(pathToMigrationFile, add_strings.upString);
-    console.log("RES STRINGS")
-    console.log(add_strings)
-    console.log(delete_string)
+    //console.log("RES STRINGS")
+    //console.log(add_strings)
+    //console.log(delete_string)
     //FileService.writeToMigrationFile(pathToMigrationFile, delete_string.upString);
     //FileService.writeToMigrationFile(pathToMigrationFile, '});},');
     //FileService.writeToMigrationFile(pathToMigrationFile, 'down: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {');
