@@ -102,15 +102,14 @@ export class DbService {
         }
         console.log("UNDEX")
             console.log(index_strings)
-        for(const index of index_strings) {
-            
-            upString += index.up_string.add_index_string //adding index
-        } 
+        
         for(const index of index_strings) {
             upString += index.up_string.remove_index_string //deleting index
         }
         upString += change_column_strings.upString;
-               
+        for(const index of index_strings) {
+            upString += index.up_string.add_index_string //adding index
+        } 
         downString += change_column_strings.downString;
         for(const index of index_strings) {
             downString += index.down_string.remove_index_string; //deleting index down

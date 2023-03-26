@@ -32,7 +32,7 @@ export async function compareTables(sequelize: Sequelize, pathToMigrationFile: s
     final_string += add_strings.downString;
     final_string += add_strings.addIndexesDownString;
     console.log("DAUN")
-    console.log(add_strings.addIndexesDownString)
+    console.log(add_strings)
     final_string += delete_string.downString;
     final_string += '});},};';
     final_string = beautifier.js_beautify(final_string); 

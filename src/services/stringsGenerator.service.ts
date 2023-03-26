@@ -192,23 +192,25 @@ export class StringsGeneratorService {
             add_constr_string: '',
             remove_constr_string: '',
         };
+        console.log("TABLES IN GENERATOR")
+        console.log(tableInModel)
+        console.log(tableInDb)
         let pk_model_fields: Array<string> = [];
         let pk_db_fields: Array<string> = [];
         let fk_model_fields: Array<string> = [];
         let fk_db_fields: Array<string> = [];
         let unique_model_fields: Array<string> = [];
         let unique_db_fields: Array<string> = [];
-        console.log(tableInDb)
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;
             if (tableInModel[column].primaryKey) pk_model_fields.push(real_column_name);
-            else if (tableInModel[column].references) fk_model_fields.push(real_column_name);
-            else if (tableInModel[column].unique) unique_model_fields.push(real_column_name);
+            if (tableInModel[column].references) fk_model_fields.push(real_column_name);
+            if (tableInModel[column].unique) unique_model_fields.push(real_column_name);
         }
         for (const column in tableInDb) {
             if (tableInDb[column].primaryKey) pk_db_fields.push(column);
-            else if (tableInDb[column].foreignKey) fk_db_fields.push(column);
-            else if (tableInDb[column].unique) unique_db_fields.push(column);
+            if (tableInDb[column].foreignKey) fk_db_fields.push(column);
+            if (tableInDb[column].unique) unique_db_fields.push(column);
         }
         //PRIMARY KEYS
         if (pk_model_fields.length !== 0 && pk_db_fields.length === 0) {
@@ -323,7 +325,11 @@ export class StringsGeneratorService {
                 }
             }
         }
+        console.log("FK DB FIELD")
+            console.log(fk_db_fields)
+            console.log(fk_model_fields);
         for (const field of fk_db_fields) {
+            
             if (!fk_model_fields.includes(field)) {
                 //no fk in model -> delete fk from db
                 res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[field].fk_name}', {transaction: t});`;
@@ -478,22 +484,24 @@ export class StringsGeneratorService {
         let model_create_indexes_strings = this.getQueryCreateIndexString(table_name, table_schema, ModelService.getModelByTableName(sequelize, table_name, table_schema), sequelize);
          
         for(const model_index of curr_model.options.indexes as IndexesOptions[]) {
+            let tmp_model_index = JSON.parse(JSON.stringify(model_index));
+            tmp_model_index.transaction = 't';
             if (!Object.keys(db_indexes).includes(model_index.name as string)) {
-                up_string.add_index_string+= `await queryInterface.addIndex({tableName: '${table_name}', schema: '${table_schema}'}, ${JSON.stringify(model_index)});`
-                down_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}');`;
+                up_string.add_index_string+= `await queryInterface.addIndex({tableName: '${table_name}', schema: '${table_schema}'}, ${JSON.stringify(tmp_model_index).replace(/"\btransaction":"t"/g, '"transaction": t')});`
+                down_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}', { transaction: t });`;
                 // добавляем индекс
             }
             else if(model_create_indexes_strings[model_index.name as string].replace(/\s|"/g, "") !== db_indexes[model_index.name as string].indexDef.replace(/\s|"/g, "")){
-                up_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}');`;
-                up_string.add_index_string += `await queryInterface.addIndex({tableName: '${table_name}', schema: '${table_schema}'}, ${JSON.stringify(model_index)});`
-                down_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}');`;
-                down_string.add_index_string += `await queryInterface.sequelize.query('${db_indexes[model_index.name as string].indexDef}');`
+                up_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}', { transaction: t });`;
+                up_string.add_index_string += `await queryInterface.addIndex({tableName: '${table_name}', schema: '${table_schema}'}, ${JSON.stringify(tmp_model_index).replace(/"\btransaction":"t"/g, '"transaction": t')});`
+                down_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}', { transaction: t });`;
+                down_string.add_index_string += `await queryInterface.sequelize.query('${db_indexes[model_index.name as string].indexDef}', {transaction: t});`
             } 
         }
         for(const db_index in db_indexes) {
             if (!((curr_model.options.indexes as IndexesOptions[]).find((element) => element.name === db_index))) {
-                up_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${db_index}');`;
-                down_string.add_index_string += `await queryInterface.sequelize.query('${db_indexes[db_index].indexDef}');`
+                up_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${db_index}', { transaction: t });`;
+                down_string.add_index_string += `await queryInterface.sequelize.query('${db_indexes[db_index].indexDef}', {transaction: t});`
             }
         }
         console.log("GET INDEXES STRINGS")

@@ -6,6 +6,7 @@ import { Table, HasMany, ForeignKey, Model } from "sequelize-typescript";
 import { WhereOptions } from "sequelize";
 import { StringsGeneratorService } from "./src/services/stringsGenerator.service";
 import { IndexModel, IndexModel2 } from "./tests/testModels/indexModel";
+import { Model2 } from "./tests/testModels/model2";
 
 export const sequelize = new Sequelize({
     database: 'empty',
@@ -13,13 +14,13 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model1, IndexModel, IndexModel2],
+    models: [Model1, IndexModel, IndexModel2, Model2],
     define: {
         freezeTableName: true,
     },
 });
 
-
+console.log(sequelize.models.Model2.getAttributes())
 //sequelize.sync({force: true});
 const auto_migrations = new AutoMigrations(sequelize);
 auto_migrations.generateMigration('new', '/home/anatoliy/WORK/sequelize-migrations/migrations')

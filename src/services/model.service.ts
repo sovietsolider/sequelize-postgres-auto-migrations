@@ -159,7 +159,8 @@ export class ModelService {
             'name',
             'references', 
             'onUpdate',
-            'onDelete'
+            'onDelete',
+            'defaultValue'
         ];
         let res_string = '';
         for (const inside_attr in description[attr]) {
@@ -167,19 +168,7 @@ export class ModelService {
                 res_string += `${inside_attr}: ${ModelService.getTypeByModelAttr(
                     description[attr].type,
                 )},`;
-            } /*
-            if (inside_attr === 'references') {
-                let reference = description[attr][inside_attr] as {
-                    model: string;
-                    key: string;
-                };
-                res_string += `${inside_attr}: { model: "${reference.model}", key: "${reference.key}"},`;
-                continue;
-            }*/
-            /*if (inside_attr === 'onDelete' || inside_attr === 'onUpdate') {
-                res_string += `${inside_attr}: "${description[attr][inside_attr]}",`;
-                continue;
-            }*/
+            } 
             if (!attrs_to_except.includes(inside_attr)) {
                 res_string += `${inside_attr}: ${description[attr][inside_attr as keyof object]},`;
             }

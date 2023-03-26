@@ -14,16 +14,15 @@ const JobIndex = createIndexDecorator({
 
 @Table
 class IndexModel extends Model {
-    @JobIndex
     @Column
     Ind1!: number;
-    @JobIndex
     @Column
     ind2!: number;
     @Column
     ind3!: number;
     @Column
     ind4!: number
+
 }
 
 @Table
