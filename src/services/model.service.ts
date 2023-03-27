@@ -1,10 +1,14 @@
-import { Sequelize } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
 import { ModelAttributeColumnOptions } from 'sequelize';
 import { Model, ModelCtor } from 'sequelize-typescript';
-import { StringsGeneratorService } from './stringsGenerator.service';
-
+import { MigrationOptions } from '../common/interfaces';
 export class ModelService {
-    static getModelByTableName(
+    sequelize: Sequelize;
+    migration_options: MigrationOptions | undefined;
+    constructor(_sequelize: Sequelize) {
+        this.sequelize = _sequelize;
+    }
+    getModelByTableName(
         sequelize: Sequelize,
         table_name: string,
         table_schema: string,
@@ -38,7 +42,7 @@ export class ModelService {
         return res as ModelCtor<Model<any, any>>;
     }
 
-    static getTypeByModelAttr(current_type: any, res_string = '') {
+    getTypeByModelAttr(current_type: any, res_string = '') {
         let type_name = current_type.constructor.name; //(description[attr].type as unknown as {option: any, type: string}).type.constructor.name
         if (type_name === 'STRING') {
             let type_length = current_type._length;
@@ -65,7 +69,7 @@ export class ModelService {
         return res_string;
     }
 
-    static generateModelsInfo(sequelize: Sequelize) {
+    generateModelsInfo(sequelize: Sequelize) {
         let res = [];
         let models = sequelize.modelManager.all;
         for (const m of models) {
@@ -87,7 +91,7 @@ export class ModelService {
         return res;
     }
 
-    static getModelColumnsAsString(
+    getModelColumnsAsString(
         description:
             | {
                   readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
@@ -110,12 +114,12 @@ export class ModelService {
             res_string += `${description[attr].field}: {`;
             for (const inside_attr in description[attr]) {
                 if (inside_attr === 'type') {
-                    res_string += `${inside_attr}: ${ModelService.getTypeByModelAttr(
+                    res_string += `${inside_attr}: ${this.getTypeByModelAttr(
                         description[attr].type,
                     )},`;
                 }
                 if (inside_attr === 'references') {
-                    let reference = StringsGeneratorService.getModelReference(description[attr][inside_attr] as {
+                    let reference = this.getModelReference(description[attr][inside_attr] as {
                         model: string | {
                             tableName: string;
                             schema: string;
@@ -140,7 +144,7 @@ export class ModelService {
         return res_string;
     }
 
-    static getModelColumnDescriptionAsString(
+    getModelColumnDescriptionAsString(
         description: {
             readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
         },
@@ -165,7 +169,7 @@ export class ModelService {
         let res_string = '';
         for (const inside_attr in description[attr]) {
             if (inside_attr === 'type') {
-                res_string += `${inside_attr}: ${ModelService.getTypeByModelAttr(
+                res_string += `${inside_attr}: ${this.getTypeByModelAttr(
                     description[attr].type,
                 )},`;
             } 
@@ -177,7 +181,7 @@ export class ModelService {
         return res_string;
     }
 
-    static getModelAttributesNames(
+    getModelAttributesNames(
         description:
             | {
                   readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
@@ -189,7 +193,7 @@ export class ModelService {
         return res;
     }
 
-    static getColumnNameByField(
+    getColumnNameByField(
         description:
             | {
                   readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
@@ -205,5 +209,30 @@ export class ModelService {
             }
         }
         return res;
+    }
+
+    getModelReference(model_references: {
+        model: { tableName: string; schema: string } | string;
+        key: string;
+    }) {
+        let res: any = {};
+        console.log(model_references)
+        if (typeof model_references.model === typeof {}) {
+            res.model = model_references.model as {
+                tableName: string;
+                schema: string;
+            };
+            res.key = model_references.key;
+        } else if (typeof model_references.model === typeof '') {
+            res.model = {
+                tableName: model_references.model as string,
+                schema: 'public',
+            };
+            res.key = model_references.key;
+        }
+        return res as {
+            model: { tableName: string; schema: string };
+            key: string;
+        };
     }
 }

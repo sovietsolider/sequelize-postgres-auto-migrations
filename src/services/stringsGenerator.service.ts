@@ -11,9 +11,20 @@ import {
 import { ModelService } from './model.service';
 import { DbService } from './db.service';
 import { IndexesOptions } from 'sequelize';
+import { ModelAttributeColumnReferencesOptions } from 'sequelize';
+import { FileService } from './file.service';
 
 export class StringsGeneratorService {
-    static async getStringsToChangeTable(
+    sequelize: Sequelize;
+    migration_options: MigrationOptions | undefined;
+    dbService: DbService;
+    modelService: ModelService;
+    constructor(_sequelize: Sequelize, dbService: DbService, modelService: ModelService) {
+        this.sequelize = _sequelize;
+        this.dbService = dbService;
+        this.modelService = modelService;
+    }
+    async getStringsToChangeTable(
         sequelize: Sequelize,
         table_schema: string,
         table_name: string,
@@ -37,29 +48,32 @@ export class StringsGeneratorService {
             remove_column_string: '',
         };
 
-        let tableInDb: TableToModel = await DbService.tableToModelInfo(
+        let tableInDb: TableToModel = await this.dbService.tableToModelInfo(
             sequelize,
             table_schema,
             table_name,
         );
         let tableInModel = (
-            ModelService.getModelByTableName(sequelize, table_name, table_schema) as ModelCtor<
+            this.modelService.getModelByTableName(sequelize, table_name, table_schema) as ModelCtor<
                 Model<any, any>
             >
         ).getAttributes();
-        const model_columns_names = ModelService.getModelAttributesNames(tableInModel);
+        let changed_columns = [];
+        const model_columns_names = this.modelService.getModelAttributesNames(tableInModel);
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;
             if (Object.keys(tableInDb).includes(real_column_name)) {
                 let columns_different = false;
-                up_string.change_column_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
-                down_string.change_column_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
-                up_string.change_column_string += `type: ${ModelService.getTypeByModelAttr(
+                let tmp_up_string = '';
+                let tmp_down_string = '';
+                tmp_up_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
+                tmp_down_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
+                tmp_up_string += `type: ${this.modelService.getTypeByModelAttr(
                     tableInModel[column].type,
                 )},`;
-                down_string.change_column_string += `type: ${tableInDb[real_column_name].type},`;
+                tmp_down_string += `type: ${tableInDb[real_column_name].type},`;
                 if (
-                    ModelService.getTypeByModelAttr(tableInModel[column].type) !==
+                    this.modelService.getTypeByModelAttr(tableInModel[column].type) !==
                     tableInDb[real_column_name].type
                 ) {
                     columns_different = true;
@@ -70,38 +84,49 @@ export class StringsGeneratorService {
                 }
                 if (model_allow_null === undefined) model_allow_null = true;
                 if (model_allow_null !== tableInDb[real_column_name].allowNull) {
-                    up_string.change_column_string += `allowNull: ${model_allow_null},`;
-                    down_string.change_column_string += `allowNull: ${tableInDb[real_column_name].allowNull},`;
+                    tmp_up_string += `allowNull: ${model_allow_null},`;
+                    tmp_down_string += `allowNull: ${tableInDb[real_column_name].allowNull},`;
                     columns_different = true;
                 }
+                //console.log("AUTO INCREMENT")
+                //console.log(tableInModel[column].autoIncrement)
+                //console.log(tableInDb[real_column_name].autoIncrement)
                 if (
                     tableInModel[column].autoIncrement !== tableInDb[real_column_name].autoIncrement
                 ) {
-                    up_string.change_column_string += `autoIncrement: ${tableInModel[column].autoIncrement},`;
-                    down_string.change_column_string += `autoIncrement: ${tableInDb[real_column_name].autoIncrement},`;
+                    tmp_up_string += `autoIncrement: ${tableInModel[column].autoIncrement},`;
+                    tmp_down_string += `autoIncrement: ${tableInDb[real_column_name].autoIncrement},`;
                     columns_different = true;
                 }
                 if (
                     tableInModel[column].defaultValue !== tableInDb[real_column_name].defaultValue
                 ) {
-                    up_string.change_column_string += `defaultValue: ${JSON.stringify(
+                    tmp_up_string += `defaultValue: ${JSON.stringify(
                         tableInModel[column].defaultValue,
                     )},`;
-                    down_string.change_column_string += `defaultValue: ${tableInDb[real_column_name].defaultValue},`;
+                    tmp_down_string += `defaultValue: ${tableInDb[real_column_name].defaultValue},`;
 
                     columns_different = true;
                 }
 
-                up_string.change_column_string += '},{ transaction: t });';
-                down_string.change_column_string += '},{ transaction: t});';
+                tmp_up_string += '},{ transaction: t });';
+                tmp_down_string += '},{ transaction: t});';
+                console.log("COLUMNS")
+                console.log(tmp_up_string)
+                console.log(columns_different)
                 if (!columns_different) {
-                    up_string.change_column_string = '';
-                    down_string.change_column_string = '';
+                    tmp_up_string = '';
+                    tmp_down_string = '';
+                }
+                else {
+                    changed_columns.push(real_column_name);
+                    up_string.change_column_string += tmp_up_string;
+                    down_string.change_column_string += tmp_down_string;
                 }
             } else {
                 //column is missing in Db -> add
                 up_string.add_column_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
-                up_string.add_column_string += ModelService.getModelColumnDescriptionAsString(
+                up_string.add_column_string += this.modelService.getModelColumnDescriptionAsString(
                     tableInModel,
                     column,
                 );
@@ -129,54 +154,65 @@ export class StringsGeneratorService {
         };
         //let index_strings = await this.getStringOfIndexes(table_schema, table_name, sequelize);
         //res_string.up_string += index_strings.up_string.remove_index_string;
-        res_string.up_string += this.comparePkConstraint(
+        res_string.up_string += (await this.comparePkConstraint(
             table_schema,
             table_name,
             tableInModel,
             tableInDb,
-        ).res_up_string.remove_constr_string; //удаление ограничений
+            changed_columns,
+            sequelize
+        )).res_up_string.remove_constr_string; //удаление ограничений
         res_string.up_string += up_string.remove_column_string; //удаление атрибутов
         res_string.up_string += up_string.add_column_string; //добавление атрибутов
         res_string.up_string += up_string.change_column_string; //изменение атрибутов
         //res_string.up_string += index_strings.up_string.add_index_string; //добавление индексов
-        res_string.up_string += this.comparePkConstraint(
+        res_string.up_string += (await this.comparePkConstraint(
             table_schema,
             table_name,
             tableInModel,
             tableInDb,
-        ).res_up_string.add_constr_string; //добавление ограничений
+            changed_columns,
+            sequelize
+        )).res_up_string.add_constr_string; //добавление ограничений
         
         //res_string.down_string += index_strings.down_string.remove_index_string; //удаление индексов
-        res_string.down_string += this.comparePkConstraint(
+        res_string.down_string += (await this.comparePkConstraint(
             table_schema,
             table_name,
             tableInModel,
             tableInDb,
-        ).res_down_string.remove_constr_string; //удаление ограничений
+            changed_columns,
+            sequelize
+        )).res_down_string.remove_constr_string; //удаление ограничений
         res_string.down_string += down_string.remove_column_string; //удаление атрибутов
         res_string.down_string += down_string.add_column_string; //добавление атрибутов
         res_string.down_string += down_string.change_column_string; //изменение атрибутов
         //res_string.down_string += index_strings.down_string.add_index_string; //добавление индексов
-        res_string.down_string += this.comparePkConstraint(
+        res_string.down_string += (await this.comparePkConstraint(
             table_schema,
             table_name,
             tableInModel,
             tableInDb,
-        ).res_down_string.add_constr_string; //добавление ограничений
-
+            changed_columns,
+            sequelize
+        )).res_down_string.add_constr_string; //добавление ограничений
+        console.log("RES STRING GEN")
+        console.log(up_string)
         return Promise.resolve({
             upString: res_string.up_string,
             downString: res_string.down_string,
         });
     }
 
-    private static comparePkConstraint(
+    private async comparePkConstraint(
         table_schema: string,
         table_name: string,
         tableInModel: {
             readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
         },
         tableInDb: TableToModel,
+        changed_columns: Array<string>,
+        sequelize: Sequelize
     ) {
         let res_up_string: {
             add_constr_string: string;
@@ -192,15 +228,15 @@ export class StringsGeneratorService {
             add_constr_string: '',
             remove_constr_string: '',
         };
-        console.log("TABLES IN GENERATOR")
-        console.log(tableInModel)
-        console.log(tableInDb)
+        console.log("CHANGED COLUMNS")
+        console.log(changed_columns)
         let pk_model_fields: Array<string> = [];
         let pk_db_fields: Array<string> = [];
         let fk_model_fields: Array<string> = [];
         let fk_db_fields: Array<string> = [];
         let unique_model_fields: Array<string> = [];
         let unique_db_fields: Array<string> = [];
+        let fk_removed: {[x: string]: Boolean } = {};
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;
             if (tableInModel[column].primaryKey) pk_model_fields.push(real_column_name);
@@ -212,6 +248,9 @@ export class StringsGeneratorService {
             if (tableInDb[column].foreignKey) fk_db_fields.push(column);
             if (tableInDb[column].unique) unique_db_fields.push(column);
         }
+        console.log("TABLES IN GENERATOR")
+        console.log(unique_model_fields)
+        console.log(unique_db_fields)
         //PRIMARY KEYS
         if (pk_model_fields.length !== 0 && pk_db_fields.length === 0) {
             res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'PRIMARY KEY', fields: ['${pk_model_fields.join(
@@ -231,7 +270,7 @@ export class StringsGeneratorService {
                 "','",
             )}'], transaction: t});`;
         } else if (
-            JSON.stringify(pk_model_fields) !== JSON.stringify(pk_db_fields) &&
+            (JSON.stringify(pk_model_fields) !== JSON.stringify(pk_db_fields) || pk_model_fields.some(r => changed_columns.includes(r))) &&
             pk_model_fields[0]
         ) {
             res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${
@@ -253,10 +292,45 @@ export class StringsGeneratorService {
         console.log("FK")
         console.log(fk_model_fields)
         console.log(fk_db_fields)
+        for(const field of changed_columns) { //если атр был изменён, сбрасываем fk для изменения
+            let is_ref = this.isReferenced(table_name, table_schema, field, sequelize.models as {[key: string]: ModelCtor<Model<any, any>>;});
+            if(is_ref) {
+                fk_removed[is_ref.columnName] = true;
+                let model_ref = this.modelService.getModelReference(
+                is_ref.column.references as {
+                    model: { tableName: string; schema: string } | string;
+                        key: string;
+                },
+                );
+                let ref_table = await this.dbService.tableToModelInfo(sequelize, is_ref.schema, is_ref.tableName);
+                res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${ref_table[is_ref.columnName].fk_name}', {transaction: t});`;
+                res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'],references: { table: { tableName: '${
+                    model_ref.model.tableName
+                }', schema: '${model_ref.model.schema}' },field: '${
+                    model_ref.key
+                }',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${
+                    ref_table[is_ref.columnName].onUpdate
+                }',name: '${this.getConstraintNameByModel(
+                    table_name,
+                    table_schema,
+                    is_ref.columnName,
+                    'fkey',
+                )}',transaction: t});`;
+                res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintNameByModel(
+                    table_name,
+                    table_schema,
+                    is_ref.columnName,
+                    'fkey',
+                )}', {transaction: t});`;
+                res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'], references: { table: { tableName: '${ref_table[is_ref.columnName].references.model.tableName}', schema: '${ref_table[is_ref.columnName].references.model.schema}'},field: '${ref_table[is_ref.columnName].references.key}',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate}',name: '${ref_table[is_ref.columnName].fk_name}',transaction: t});`;
+            }
+        }
+        
+
         for (const field of fk_model_fields) {
             //если fk нету в дб -> добавляем
             if (!fk_db_fields.includes(field)) {
-                let model_ref = this.getModelReference(
+                let model_ref = this.modelService.getModelReference(
                     tableInModel[field].references as {
                         model: { tableName: string; schema: string } | string;
                         key: string;
@@ -282,21 +356,19 @@ export class StringsGeneratorService {
                 )}', {transaction: t});`;
             } else {
                 console.log("RULES")
-                console.log(tableInModel[field])
-                console.log(tableInDb[field].onDelete);
-                if ((
+                if (((
                     JSON.stringify(
-                        this.getModelReference(
+                        this.modelService.getModelReference(
                             tableInModel[field].references as {
                                 model: { tableName: string; schema: string } | string;
                                 key: string;
                             },
                         ),
-                    ) !== JSON.stringify(tableInDb[field].references)) || (tableInModel[field].onDelete !== tableInDb[field].onDelete) || (tableInModel[field].onUpdate !== tableInDb[field].onUpdate)
+                    ) !== JSON.stringify(tableInDb[field].references)) || (tableInModel[field].onDelete !== tableInDb[field].onDelete) || (tableInModel[field].onUpdate !== tableInDb[field].onUpdate) || fk_model_fields.some(r => changed_columns.includes(r) 
+                    )) && !fk_removed[field]
                 ) {
-                   
                     //console.log(tableInDb[field].references)
-                    let model_ref = this.getModelReference(
+                    let model_ref = this.modelService.getModelReference(
                         tableInModel[field].references as {
                             model: { tableName: string; schema: string } | string;
                             key: string;
@@ -448,10 +520,35 @@ export class StringsGeneratorService {
         }
         console.log("CONSTRAINTS RESULT")
         console.log(res_up_string, res_down_string)
-        return { res_up_string, res_down_string };
+        return Promise.resolve({ res_up_string, res_down_string });
     }
 
-    static async getStringOfIndexes(
+    isReferenced(table_name: string, table_schema: string, column_name: string, models: {
+        [key: string]: ModelCtor<Model<any, any>>;
+    }) {
+        console.log("IS REFERENCED")
+        console.log(column_name);
+        console.log(models)
+        for(const model in models) {
+            let columns = models[model].getAttributes();
+            console.log("COLUMNS")
+            for(const attr in columns) {
+                console.log(columns[attr])
+                if(columns[attr].references) {
+                    let curr_ref = this.modelService.getModelReference(columns[attr].references as { model: string | { tableName: string; schema: string; }; key: string; })
+                    if(curr_ref.model.schema === table_schema && curr_ref.model.tableName == table_name && curr_ref.key === column_name) {
+                        if(typeof models[model].getTableName() === typeof '')
+                            return {columnName: attr, column: columns[attr], tableName: models[model].getTableName(), schema: 'public'}
+                        else    
+                            return {columnName: attr, column: columns[attr], tableName: (models[model].getTableName() as any).tableName, schema: (models[model].getTableName() as any).schema} 
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    async getStringOfIndexes(
          table_schema: string,
          table_name: string,
          sequelize: Sequelize
@@ -470,18 +567,25 @@ export class StringsGeneratorService {
             add_index_string: '',
             remove_index_string: '',
         };
-        let db_raw_indexes: {tableName: string, indexName: string, indexDef: string}[] = (await DbService.getTableIndexes(table_schema, table_name, sequelize)).at(0) as {tableName: string, indexName: string, indexDef: string}[];
+        let db_raw_indexes: {tableName: string, indexName: string, indexDef: string}[] = (await this.dbService.getTableIndexes(table_schema, table_name, sequelize)).at(0) as {tableName: string, indexName: string, indexDef: string}[];
         let db_indexes: {[x: string]: {tableName: string, indexName: string, indexDef: string}} = {};
+        let curr_constraints = (await sequelize.query(this.dbService.getColumnsConstraintsSchemaInfo(table_schema, table_name))).at(0) as {constraint_type: string, table_schema: string, constraint_name: string, table_name: string, column_name: string, foreign_table_schema: string, foreign_table_name: string, foreign_column_name:string}[];
+        
+        console.log("CURR CONSTAINTS")
+        console.log(curr_constraints);
         for(const raw_index of db_raw_indexes) {
-            //raw_index.indexDef = raw_index.indexDef.replace(/\s|"/g, "");
             db_indexes[raw_index.indexName] = raw_index;
             if(raw_index.indexName.match(/.*_pkey/)) 
                 delete db_indexes[raw_index.indexName];
+            for(const constr of curr_constraints) {
+                if(constr.constraint_name == raw_index.indexName && constr.constraint_type === 'UNIQUE')
+                    delete db_indexes[raw_index.indexName];
+            }            
         }
         console.log("DB INDEXES")
         console.log(db_indexes)
-        let curr_model = ModelService.getModelByTableName(sequelize, table_name, table_schema);
-        let model_create_indexes_strings = this.getQueryCreateIndexString(table_name, table_schema, ModelService.getModelByTableName(sequelize, table_name, table_schema), sequelize);
+        let curr_model = this.modelService.getModelByTableName(sequelize, table_name, table_schema);
+        let model_create_indexes_strings = this.getQueryCreateIndexString(table_name, table_schema, this.modelService.getModelByTableName(sequelize, table_name, table_schema), sequelize);
          
         for(const model_index of curr_model.options.indexes as IndexesOptions[]) {
             let tmp_model_index = JSON.parse(JSON.stringify(model_index));
@@ -510,7 +614,7 @@ export class StringsGeneratorService {
         return {up_string, down_string};
     }
     
-    private static getQueryCreateIndexString(table_name: string, table_schema: string, model: ModelCtor<Model<any, any>>, sequelize: Sequelize) {
+    private getQueryCreateIndexString(table_name: string, table_schema: string, model: ModelCtor<Model<any, any>>, sequelize: Sequelize) {
         let index_strings: { [x: string]: string } = {};
         let model_indexes: readonly IndexesOptions[] = model.options.indexes as IndexesOptions[];
         for(const index of model_indexes) {
@@ -560,7 +664,7 @@ export class StringsGeneratorService {
         return index_strings;
     }
 
-    private static getConstraintNameOfCompositeKey(
+    private getConstraintNameOfCompositeKey(
         table_name: string,
         table_schema: string,
         fields: Array<string>,
@@ -577,7 +681,7 @@ export class StringsGeneratorService {
         res_string += `${suffix}`;
         return res_string;
     }
-    private static getConstraintNameByModel(
+    private  getConstraintNameByModel(
         table_name: string,
         table_schema: string,
         column_name: string,
@@ -592,31 +696,9 @@ export class StringsGeneratorService {
         return res_string + `${column_name}_${suffix}`;
     }
 
-    static getModelReference(model_references: {
-        model: { tableName: string; schema: string } | string;
-        key: string;
-    }) {
-        let res: any = {};
-        if (typeof model_references.model === typeof {}) {
-            res.model = model_references.model as {
-                tableName: string;
-                schema: string;
-            };
-            res.key = model_references.key;
-        } else if (typeof model_references.model === typeof '') {
-            res.model = {
-                tableName: model_references.model as string,
-                schema: 'public',
-            };
-            res.key = model_references.key;
-        }
-        return res as {
-            model: { tableName: string; schema: string };
-            key: string;
-        };
-    }
+    
 
-    static getUpStringToAddTable(
+    getUpStringToAddTable(
         model: ModelCtor<Model<any, any>> | undefined,
         model_schema: string | undefined,
         table_name: string,
@@ -625,18 +707,18 @@ export class StringsGeneratorService {
         //console.log('GENERATE STRING SCHEMA NAME');
         let description = model?.getAttributes();
         let res_string = `await queryInterface.createTable({tableName: '${table_name}', schema: '${table_schema}'},{`;
-        res_string += ModelService.getModelColumnsAsString(description);
+        res_string += this.modelService.getModelColumnsAsString(description);
         res_string += `},{ transaction: t, schema: '${model_schema}'});`;
         return res_string;
     }
 
-    static async getDownStringToAddTable(
+    async getDownStringToAddTable(
         sequelize: Sequelize,
         table_schema: string,
         table_name: string,
     ): Promise<string> {
         let res_string = `await queryInterface.createTable({tableName: '${table_name}', schema: '${table_schema}'},{`;
-        let attributes = await DbService.tableToModelInfo(sequelize, table_schema, table_name);
+        let attributes = await this.dbService.tableToModelInfo(sequelize, table_schema, table_name);
         //let options_to_except: Array<string> = [];
         for (const column in attributes) {
             let options: ModelAttribute = attributes[column];
@@ -663,7 +745,7 @@ export class StringsGeneratorService {
         return Promise.resolve(res_string);
     }
 
-    static getUpStringToDeleteTable(model_schema: string | undefined, table_name: string, is_cascade: boolean) {
+    getUpStringToDeleteTable(model_schema: string | undefined, table_name: string, is_cascade: boolean) {
         if(is_cascade)
             return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ cascade: true, transaction: t });`;
         return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ transaction: t });`;
