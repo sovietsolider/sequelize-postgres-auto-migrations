@@ -5,7 +5,7 @@ import { Model1 } from './model1';
 class Model2 extends Model {
     @ForeignKey(() => Model1)
     @Column
-    FkToModel1!: number;
+    FkToModel1!: string;
 
     @BelongsTo(() => Model1)
     model1!: Model1;

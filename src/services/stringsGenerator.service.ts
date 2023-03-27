@@ -29,7 +29,7 @@ export class StringsGeneratorService {
         table_schema: string,
         table_name: string,
         removed_fk: {[x: string]: boolean}
-    ): Promise<{ upString: string; downString: string, changed_columns: string[]}> {
+    ): Promise<{ upString: string; downString: string }> {
         let up_string: {
             change_column_string: string;
             add_column_string: string;
@@ -59,7 +59,6 @@ export class StringsGeneratorService {
                 Model<any, any>
             >
         ).getAttributes();
-        let changed_columns = [];
         const model_columns_names = this.modelService.getModelAttributesNames(tableInModel);
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;
@@ -80,9 +79,9 @@ export class StringsGeneratorService {
                     columns_different = true;
                 }
                 let model_allow_null = tableInModel[column].allowNull;
-                if (tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
-                    model_allow_null = false;
-                }
+                // if (tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
+                //     model_allow_null = false;
+                // }
                 if (model_allow_null === undefined) model_allow_null = true;
                 if (model_allow_null !== tableInDb[real_column_name].allowNull) {
                     tmp_up_string += `allowNull: ${model_allow_null},`;
@@ -114,7 +113,6 @@ export class StringsGeneratorService {
                     tmp_down_string = '';
                 }
                 else {
-                    changed_columns.push(real_column_name);
                     up_string.change_column_string += tmp_up_string;
                     down_string.change_column_string += tmp_down_string;
                 }
@@ -154,7 +152,6 @@ export class StringsGeneratorService {
             table_name,
             tableInModel,
             tableInDb,
-            changed_columns,
             removed_fk,
         )).res_up_string.remove_constr_string; //удаление ограничений
         res_string.up_string += up_string.remove_column_string; //удаление атрибутов
@@ -166,7 +163,6 @@ export class StringsGeneratorService {
             table_name,
             tableInModel,
             tableInDb,
-            changed_columns,
             removed_fk
         )).res_up_string.add_constr_string; //добавление ограничений
         
@@ -176,7 +172,6 @@ export class StringsGeneratorService {
             table_name,
             tableInModel,
             tableInDb,
-            changed_columns,
             removed_fk
         )).res_down_string.remove_constr_string; //удаление ограничений
         res_string.down_string += down_string.remove_column_string; //удаление атрибутов
@@ -188,13 +183,11 @@ export class StringsGeneratorService {
             table_name,
             tableInModel,
             tableInDb,
-            changed_columns,
             removed_fk
         )).res_down_string.add_constr_string; //добавление ограничений
         return Promise.resolve({
             upString: res_string.up_string,
             downString: res_string.down_string,
-            changed_columns
         });
     }
 
@@ -221,9 +214,6 @@ export class StringsGeneratorService {
                     columns_different = true;
                 }
                 let model_allow_null = tableInModel[column].allowNull;
-                if (tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
-                    model_allow_null = false;
-                }
                 if (model_allow_null === undefined) model_allow_null = true;
                 if (model_allow_null !== tableInDb[real_column_name].allowNull) {
                     columns_different = true;
@@ -238,8 +228,13 @@ export class StringsGeneratorService {
                 ) {
                     columns_different = true;
                 }
+                if(columns_different)
+                    different_columns.push(column)
             }
         }
+        console.log(table_name)
+        console.log(different_columns)
+
         return different_columns;
     }
 
@@ -250,7 +245,6 @@ export class StringsGeneratorService {
             readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
         },
         tableInDb: TableToModel,
-        changed_columns: Array<string>,
         removed_fk: {[x: string]: boolean}
     ) {
         let res_up_string: {
@@ -273,6 +267,7 @@ export class StringsGeneratorService {
         let fk_db_fields: Array<string> = [];
         let unique_model_fields: Array<string> = [];
         let unique_db_fields: Array<string> = [];
+        let changed_columns = await this.getChangedColumns(this.sequelize, table_schema, table_name);
         
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;

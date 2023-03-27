@@ -72,11 +72,7 @@ export class Compare {
         for (const table of tables) {
             let removed_fk_obj = (await this.stringGeneratorService.getStringToDropFkBeforeChanging(table.table_name, table.table_schema, (
                 await this.stringGeneratorService.getChangedColumns(sequelize, table.table_schema, table.table_name))));
-            console.log("before");
-            console.log(this.removed_fk)
             this.removed_fk = Object.assign(this.removed_fk, removed_fk_obj.removed_fk);
-            console.log("after")
-            console.log(this.removed_fk)
 
             remove_fk_strings.up_string.remove_fk += removed_fk_obj.res_up_string.remove_constr_string;
             remove_fk_strings.up_string.add_fk += removed_fk_obj.res_up_string.add_constr_string;  

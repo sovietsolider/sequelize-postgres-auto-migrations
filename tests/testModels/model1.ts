@@ -9,7 +9,7 @@ class Model1 extends Model {
 
     @Unique
     @Column
-    primaryCol2!: number;
+    primaryCol2!: string;
 
     @HasOne(() => Model2)
     model2!: Model2;
