@@ -18,9 +18,10 @@ export const sequelize = new Sequelize({
     define: {
         freezeTableName: true,
     },
+    logging: false
 });
 
-console.log(sequelize.models.Model2.getAttributes())
+console.log(sequelize.models)
 //sequelize.sync({force: true});
-const auto_migrations = new AutoMigrations(sequelize);
-auto_migrations.generateMigration('new', '/home/anatoliy/WORK/sequelize-migrations/migrations')
+let auto_migrations = new AutoMigrations(sequelize);
+auto_migrations.generateMigration('new', '/home/anatoliy/WORK/sequelize-migrations/migrations');

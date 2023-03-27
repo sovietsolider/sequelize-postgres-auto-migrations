@@ -216,7 +216,6 @@ export class ModelService {
         key: string;
     }) {
         let res: any = {};
-        console.log(model_references)
         if (typeof model_references.model === typeof {}) {
             res.model = model_references.model as {
                 tableName: string;

@@ -8,6 +8,7 @@ export class Compare {
     dbService: DbService;
     modelService: ModelService
     sequelize: Sequelize;
+    removed_fk: {[x: string]: boolean} = {};
     stringGeneratorService: StringsGeneratorService;
     constructor(_sequelize: Sequelize, _dbService: DbService, _modelService: ModelService, _stringGeneratorService: StringsGeneratorService) {
         this.dbService = _dbService;
@@ -39,7 +40,16 @@ export class Compare {
                 remove_index_string: string;
             };
         }> = []
-        console.log(schema_tables)
+        let remove_fk_strings:
+            {up_string: {
+                add_fk: string;
+                remove_fk: string;
+            };
+            down_string: {
+                add_fk: string;
+                remove_fk: string;
+            };
+        } = {up_string: {add_fk: '', remove_fk: ''}, down_string: {add_fk: '', remove_fk: ''}};
         for(const table of tables) {
             let curr_model = this.modelService.getModelByTableName(sequelize, table.table_name, table.table_schema).getAttributes();
             for(const col in curr_model) {
@@ -60,8 +70,19 @@ export class Compare {
             orderToAdd.sort(this.dbService.cmpTablesByRefInModel(sequelize, this.modelService));
         let addTablesStrings: { [x:string]: string } = {}
         for (const table of tables) {
-            console.log("table before index")
-            console.log(table)
+            let removed_fk_obj = (await this.stringGeneratorService.getStringToDropFkBeforeChanging(table.table_name, table.table_schema, (
+                await this.stringGeneratorService.getChangedColumns(sequelize, table.table_schema, table.table_name))));
+            console.log("before");
+            console.log(this.removed_fk)
+            this.removed_fk = Object.assign(this.removed_fk, removed_fk_obj.removed_fk);
+            console.log("after")
+            console.log(this.removed_fk)
+
+            remove_fk_strings.up_string.remove_fk += removed_fk_obj.res_up_string.remove_constr_string;
+            remove_fk_strings.up_string.add_fk += removed_fk_obj.res_up_string.add_constr_string;  
+            remove_fk_strings.down_string.remove_fk += removed_fk_obj.res_down_string.remove_constr_string;
+            remove_fk_strings.down_string.add_fk += removed_fk_obj.res_down_string.add_constr_string;  
+                   
             index_strings.push(await this.stringGeneratorService.getStringOfIndexes(table.table_schema, table.table_name, sequelize));
             if (!schema_tables.find((element) => element.table_name === table?.table_name && element.table_schema === table?.table_schema)) {
                 let curr_model = this.modelService.getModelByTableName(
@@ -89,6 +110,7 @@ export class Compare {
                     sequelize,
                     table.table_schema,
                     table.table_name,
+                    this.removed_fk
                 );
                 change_column_strings.upString += tmp_change_str.upString;
                 change_column_strings.downString += tmp_change_str.downString;
@@ -102,28 +124,28 @@ export class Compare {
                 //upString += this.stringGeneratorService.getStringOfIndexes(JSON.parse()) ///
             }
         }
-        console.log("UNDEX")
-            console.log(index_strings)
         
         for(const index of index_strings) {
             upString += index.up_string.remove_index_string //deleting index
         }
-        upString += change_column_strings.upString;
+        upString += remove_fk_strings.up_string.remove_fk; // removing fk before changing
+        upString += change_column_strings.upString; //changing columns
         for(const index of index_strings) {
             upString += index.up_string.add_index_string //adding index
         } 
+        upString += remove_fk_strings.up_string.add_fk; //adding fk after changing
+        downString += remove_fk_strings.down_string.remove_fk; //removing fk
         downString += change_column_strings.downString;
+        downString += remove_fk_strings.down_string.add_fk;
         for(const index of index_strings) {
             downString += index.down_string.remove_index_string; //deleting index down
         }     
         downString += drop_tables_down_string;
         let addIndexesDownString: Array<string> = [];
         for(const index of index_strings) {
-            console.log(index)
             if(index.down_string.add_index_string!=='')
                 addIndexesDownString.push(index.down_string.add_index_string);
         }
-        //console.log(upString, downString)
         return Promise.resolve({ upString, downString, addIndexesDownString });
     }
 
