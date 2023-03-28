@@ -232,8 +232,6 @@ export class StringsGeneratorService {
                     different_columns.push(column)
             }
         }
-        console.log(table_name)
-        console.log(different_columns)
 
         return different_columns;
     }
@@ -533,34 +531,37 @@ export class StringsGeneratorService {
         for(const field of changed_columns) { //если атр был изменён, сбрасываем fk для изменения
             let is_ref = this.isReferenced(table_name, table_schema, field, this.sequelize.models as {[key: string]: ModelCtor<Model<any, any>>;});
             if(is_ref) {
-                removed_fk[JSON.stringify({tableName: table_name, schema: table_schema, columnName: is_ref.columnName})] = true;
-                let model_ref = this.modelService.getModelReference(
-                is_ref.column.references as {
-                    model: { tableName: string; schema: string } | string;
-                        key: string;
-                },
-                );
                 let ref_table = await this.dbService.tableToModelInfo(this.sequelize, is_ref.schema, is_ref.tableName);
-                res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${ref_table[is_ref.columnName].fk_name}', {transaction: t});`;
-                res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'],references: { table: { tableName: '${
-                    model_ref.model.tableName
-                }', schema: '${model_ref.model.schema}' },field: '${
-                    model_ref.key
-                }',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${
-                    ref_table[is_ref.columnName].onUpdate
-                }',name: '${this.getConstraintNameByModel(
-                    table_name,
-                    table_schema,
-                    is_ref.columnName,
-                    'fkey',
-                )}',transaction: t});`;
-                res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintNameByModel(
-                    table_name,
-                    table_schema,
-                    is_ref.columnName,
-                    'fkey',
-                )}', {transaction: t});`;
-                res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'], references: { table: { tableName: '${ref_table[is_ref.columnName].references.model.tableName}', schema: '${ref_table[is_ref.columnName].references.model.schema}'},field: '${ref_table[is_ref.columnName].references.key}',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate}',name: '${ref_table[is_ref.columnName].fk_name}',transaction: t});`;
+                if(ref_table[is_ref.columnName].references) {
+                    removed_fk[JSON.stringify({tableName: table_name, schema: table_schema, columnName: is_ref.columnName})] = true;
+                    let model_ref = this.modelService.getModelReference(
+                    is_ref.column.references as {
+                        model: { tableName: string; schema: string } | string;
+                            key: string;
+                    },
+                    );
+                    console.log(ref_table)
+                    res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${ref_table[is_ref.columnName].fk_name}', {transaction: t});`;
+                    res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'],references: { table: { tableName: '${
+                        model_ref.model.tableName
+                    }', schema: '${model_ref.model.schema}' },field: '${
+                        model_ref.key
+                    }',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${
+                        ref_table[is_ref.columnName].onUpdate
+                    }',name: '${this.getConstraintNameByModel(
+                        table_name,
+                        table_schema,
+                        is_ref.columnName,
+                        'fkey',
+                    )}',transaction: t});`;
+                    res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintNameByModel(
+                        table_name,
+                        table_schema,
+                        is_ref.columnName,
+                        'fkey',
+                    )}', {transaction: t});`;
+                    res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'], references: { table: { tableName: '${ref_table[is_ref.columnName].references.model.tableName}', schema: '${ref_table[is_ref.columnName].references.model.schema}'},field: '${ref_table[is_ref.columnName].references.key}',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate}',name: '${ref_table[is_ref.columnName].fk_name}',transaction: t});`;
+                }
             }
             
         }
@@ -612,7 +613,7 @@ export class StringsGeneratorService {
         
         for(const raw_index of db_raw_indexes) {
             db_indexes[raw_index.indexName] = raw_index;
-            if(raw_index.indexName.match(/.*_pkey/)) 
+            if(raw_index.indexName.match(/.*_pkey/) || raw_index.indexName.match(/.*_pk/)) 
                 delete db_indexes[raw_index.indexName];
             for(const constr of curr_constraints) {
                 if(constr.constraint_name == raw_index.indexName && constr.constraint_type === 'UNIQUE')

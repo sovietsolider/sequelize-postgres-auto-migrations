@@ -43,8 +43,10 @@ export class ModelService {
     }
 
     getTypeByModelAttr(current_type: any, res_string = '') {
-        let type_name = current_type.constructor.name; //(description[attr].type as unknown as {option: any, type: string}).type.constructor.name
-        if (type_name === 'STRING') {
+        let type_name = current_type.constructor.name; 
+        if(typeof current_type == typeof '') 
+            res_string += `'${current_type}'`;
+        else if (type_name === 'STRING') {
             let type_length = current_type._length;
             res_string += `Sequelize.STRING(${type_length})`;
         } else if (type_name !== 'ARRAY' && type_name !== 'ENUM' && type_name !== 'DATEONLY')

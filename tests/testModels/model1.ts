@@ -2,7 +2,7 @@ import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, Bel
 import { Model2 } from './model2';
 @Table
 class Model1 extends Model {
-    @AllowNull
+    @AllowNull(false)
     @PrimaryKey
     @Column
     primaryCol!: number
