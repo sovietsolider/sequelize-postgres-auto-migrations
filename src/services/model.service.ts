@@ -166,7 +166,10 @@ export class ModelService {
             'references', 
             'onUpdate',
             'onDelete',
-            'defaultValue'
+            'defaultValue',
+            'pk_name',
+            'fk_name',
+            'unique_name'
         ];
         let res_string = '';
         for (const inside_attr in description[attr]) {

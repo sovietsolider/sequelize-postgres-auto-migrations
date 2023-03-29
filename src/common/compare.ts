@@ -27,9 +27,21 @@ export class Compare {
         let referenced_tables: Array<string> = [];
         let drop_tables_down_string = '';
         let change_column_strings: {
-            upString: string;
-            downString: string;
-        } = {upString: '', downString: ''};
+            upString: {
+                change_column_string: string;
+                add_column_string: string;
+                remove_column_string: string;
+                add_constraints_string: { fk: string, pk: string, unique: string};
+                remove_constraints_string: { fk: string, pk: string, unique: string}
+            };
+            downString: {
+                change_column_string: string;
+                add_column_string: string;
+                remove_column_string: string;
+                add_constraints_string:  { fk: string, pk: string, unique: string};
+                remove_constraints_string: { fk: string, pk: string, unique: string}
+            };
+        } = {upString: {change_column_string: '', add_column_string: '', remove_column_string: '', add_constraints_string: {pk: '', fk:'', unique: ''}, remove_constraints_string: {pk: '', fk:'', unique: ''}}, downString: {change_column_string: '', add_column_string: '', remove_column_string: '', add_constraints_string: {pk: '', fk:'', unique: ''}, remove_constraints_string: {pk: '', fk:'', unique: ''}}};
         let index_strings:Array<{
             up_string: {
                 add_index_string: string;
@@ -101,23 +113,42 @@ export class Compare {
                     table?.table_name,
                     is_cascade
                 );
-            } else {
+            } else { //если атр есть в бд и моделе -> изменяем
                 let tmp_change_str = await this.stringGeneratorService.getStringsToChangeTable(
                     sequelize,
                     table.table_schema,
                     table.table_name,
                     this.removed_fk
                 );
-                change_column_strings.upString += tmp_change_str.upString;
-                change_column_strings.downString += tmp_change_str.downString;
                 
-            }
+                change_column_strings.upString.add_column_string += tmp_change_str.upString.add_column_string; 
+                change_column_strings.upString.change_column_string += tmp_change_str.upString.change_column_string;
+                change_column_strings.upString.remove_column_string += tmp_change_str.upString.remove_column_string;
+
+                change_column_strings.upString.add_constraints_string.fk += tmp_change_str.upString.add_constraints_string.fk;
+                change_column_strings.upString.add_constraints_string.pk += tmp_change_str.upString.add_constraints_string.pk;
+                change_column_strings.upString.add_constraints_string.unique += tmp_change_str.upString.add_constraints_string.unique;
+
+                change_column_strings.upString.remove_constraints_string.fk += tmp_change_str.upString.remove_constraints_string.fk;
+                change_column_strings.upString.remove_constraints_string.pk += tmp_change_str.upString.remove_constraints_string.pk;
+                change_column_strings.upString.remove_constraints_string.unique += tmp_change_str.upString.remove_constraints_string.unique;
+
+                change_column_strings.downString.add_column_string += tmp_change_str.downString.add_column_string;
+                change_column_strings.downString.change_column_string += tmp_change_str.downString.change_column_string;
+                change_column_strings.downString.remove_column_string += tmp_change_str.downString.remove_column_string;
+                
+                change_column_strings.downString.add_constraints_string.fk += tmp_change_str.downString.add_constraints_string.fk;
+                change_column_strings.downString.add_constraints_string.pk += tmp_change_str.downString.add_constraints_string.pk;
+                change_column_strings.downString.add_constraints_string.unique += tmp_change_str.downString.add_constraints_string.unique;
+
+                change_column_strings.downString.remove_constraints_string.fk += tmp_change_str.downString.remove_constraints_string.fk;
+                change_column_strings.downString.remove_constraints_string.pk += tmp_change_str.downString.remove_constraints_string.pk;
+                change_column_strings.downString.remove_constraints_string.unique += tmp_change_str.downString.remove_constraints_string.unique;            }
         }
         
         for(const tableToAdd of orderToAdd) {
             if(addTablesStrings[tableToAdd]) {
                 upString += addTablesStrings[tableToAdd];
-                //upString += this.stringGeneratorService.getStringOfIndexes(JSON.parse()) ///
             }
         }
         
@@ -125,14 +156,32 @@ export class Compare {
             upString += index.up_string.remove_index_string //deleting index
         }
         upString += remove_fk_strings.up_string.remove_fk; // removing fk before changing
-        upString += change_column_strings.upString; //changing columns
+        upString += change_column_strings.upString.remove_constraints_string.fk; //remove constraints
+        upString += change_column_strings.upString.remove_constraints_string.pk;
+        upString += change_column_strings.upString.remove_constraints_string.unique
+        upString += change_column_strings.upString.remove_column_string; //removing columns
+        upString += change_column_strings.upString.add_column_string; //adding columns
+        upString += change_column_strings.upString.change_column_string; //changing columns
         for(const index of index_strings) {
             upString += index.up_string.add_index_string //adding index
         } 
         upString += remove_fk_strings.up_string.add_fk; //adding fk after changing
-        downString += remove_fk_strings.down_string.remove_fk; //removing fk
-        downString += change_column_strings.downString;
-        downString += remove_fk_strings.down_string.add_fk;
+        upString += change_column_strings.upString.add_constraints_string.pk; // adding constraints
+        upString += change_column_strings.upString.add_constraints_string.unique;
+        upString += change_column_strings.upString.add_constraints_string.fk;
+
+        downString += remove_fk_strings.down_string.remove_fk; //removing fk after changing
+        downString += change_column_strings.downString.remove_constraints_string.fk; //removing constraints
+        downString += change_column_strings.downString.remove_constraints_string.pk; 
+        downString += change_column_strings.downString.remove_constraints_string.unique; 
+
+        downString += change_column_strings.downString.remove_column_string; //removing columns
+        downString += change_column_strings.downString.add_column_string; //adding columns
+        downString += change_column_strings.downString.change_column_string; //change columns
+        downString += remove_fk_strings.down_string.add_fk //adding fk;
+        downString += change_column_strings.downString.add_constraints_string.pk; // adding constraints
+        downString += change_column_strings.downString.add_constraints_string.unique;
+        downString += change_column_strings.downString.add_constraints_string.fk;
         for(const index of index_strings) {
             downString += index.down_string.remove_index_string; //deleting index down
         }     
