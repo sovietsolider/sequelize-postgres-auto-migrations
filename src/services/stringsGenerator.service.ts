@@ -119,9 +119,9 @@ export class StringsGeneratorService {
                     columns_different = true;
                 }
                 let model_allow_null = tableInModel[column].allowNull;
-                // if (tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
-                //     model_allow_null = false;
-                // }
+                if (tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
+                     model_allow_null = false;
+                }
                 if (model_allow_null === undefined) model_allow_null = true;
                 if (model_allow_null !== tableInDb[real_column_name].allowNull) {
                     tmp_up_string += `allowNull: ${model_allow_null},`;
@@ -233,6 +233,9 @@ export class StringsGeneratorService {
                     columns_different = true;
                 }
                 let model_allow_null = tableInModel[column].allowNull;
+                if (tableInModel[column].primaryKey || tableInModel[column].autoIncrement) {
+                    model_allow_null = false;
+                }
                 if (model_allow_null === undefined) model_allow_null = true;
                 if (model_allow_null !== tableInDb[real_column_name].allowNull) {
                     columns_different = true;
@@ -301,8 +304,13 @@ export class StringsGeneratorService {
         if (pk_model_fields.length !== 0 && pk_db_fields.length === 0) {
             res_up_string.add_constr_string.pk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'PRIMARY KEY', fields: ['${pk_model_fields.join(
                 "','",
-            )}'], transaction: t});`;
-            res_down_string.remove_constr_string.pk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintNameByModel(
+            )}'], name: '${this.getConstraintName(
+                table_name,
+                table_schema,
+                '',
+                'pkey',
+            )}', transaction: t});`;
+            res_down_string.remove_constr_string.pk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintName(
                 table_name,
                 table_schema,
                 '',
@@ -314,18 +322,31 @@ export class StringsGeneratorService {
             }', {transaction: t});`;
             res_down_string.add_constr_string.pk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'PRIMARY KEY', fields:['${pk_db_fields.join(
                 "','",
-            )}'], transaction: t});`;
+            )}'], name: '${this.getConstraintName(
+                table_name,
+                table_schema,
+                '',
+                'pkey',
+            )}', transaction: t});`;
         } else if (
             (JSON.stringify(pk_model_fields) !== JSON.stringify(pk_db_fields) || pk_model_fields.some(r => changed_columns.includes(r))) &&
             pk_model_fields[0]
         ) {
+            console.log(pk_model_fields)
+            console.log(pk_db_fields)
+            console.log(changed_columns)
             res_up_string.remove_constr_string.pk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${
                 tableInDb[pk_db_fields[0]].pk_name
             }', {transaction: t});`;
             res_up_string.add_constr_string.pk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'PRIMARY KEY', fields: ['${pk_model_fields.join(
                 "','",
-            )}'], transaction: t});`;
-            res_down_string.remove_constr_string.pk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintNameByModel(
+            )}'], name: '${this.getConstraintName(
+                table_name,
+                table_schema,
+                '',
+                'pkey',
+            )}', transaction: t});`;
+            res_down_string.remove_constr_string.pk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintName(
                 table_name,
                 table_schema,
                 '',
@@ -333,11 +354,14 @@ export class StringsGeneratorService {
             )}', {transaction: t});`;
             res_down_string.add_constr_string.pk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'PRIMARY KEY', fields:['${pk_db_fields.join(
                 "','",
-            )}'], transaction: t});`;
+            )}'], name: '${this.getConstraintName(
+                table_name,
+                table_schema,
+                '',
+                'pkey',
+            )}', transaction: t});`;
         }
         
-        
-
         for (const field of fk_model_fields) {
             //если fk нету в дб -> добавляем
             if (!fk_db_fields.includes(field)) {
@@ -353,13 +377,13 @@ export class StringsGeneratorService {
                     tableInModel[field].onDelete
                 }',onUpdate: '${
                     tableInModel[field].onUpdate
-                }', name: '${this.getConstraintNameByModel(
+                }', name: '${this.getConstraintName(
                     table_name,
                     table_schema,
                     field,
                     'fkey',
                 )}',transaction: t});`;
-                res_down_string.remove_constr_string.fk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintNameByModel(
+                res_down_string.remove_constr_string.fk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintName(
                     table_name,
                     table_schema,
                     field,
@@ -392,13 +416,13 @@ export class StringsGeneratorService {
                         model_ref.key
                     }',}, onDelete: '${tableInModel[field].onDelete}',onUpdate: '${
                         tableInModel[field].onUpdate
-                    }',name: '${this.getConstraintNameByModel(
+                    }',name: '${this.getConstraintName(
                         table_name,
                         table_schema,
                         field,
                         'fkey',
                     )}',transaction: t});`;
-                    res_down_string.remove_constr_string.fk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintNameByModel(
+                    res_down_string.remove_constr_string.fk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${this.getConstraintName(
                         table_name,
                         table_schema,
                         field,
@@ -450,14 +474,14 @@ export class StringsGeneratorService {
             } else if (typeof tableInModel[field].unique === typeof true) {
                 if (
                     model_composite_unique_list[
-                        this.getConstraintNameByModel(table_name, table_schema, field, 'key')
+                        this.getConstraintName(table_name, table_schema, field, 'key')
                     ] === undefined
                 )
                     model_composite_unique_list[
-                        this.getConstraintNameByModel(table_name, table_schema, field, 'key')
+                        this.getConstraintName(table_name, table_schema, field, 'key')
                     ] = [];
                 model_composite_unique_list[
-                    this.getConstraintNameByModel(table_name, table_schema, field, 'key')
+                    this.getConstraintName(table_name, table_schema, field, 'key')
                 ].push(field);
             }
         }
@@ -467,7 +491,7 @@ export class StringsGeneratorService {
             if (
                 model_composite_unique_list[item].length > 1 ||
                 item !==
-                    this.getConstraintNameByModel(
+                    this.getConstraintName(
                         table_name,
                         table_schema,
                         model_composite_unique_list[item][0],
@@ -566,13 +590,13 @@ export class StringsGeneratorService {
                         model_ref.key
                     }',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${
                         ref_table[is_ref.columnName].onUpdate
-                    }',name: '${this.getConstraintNameByModel(
+                    }',name: '${this.getConstraintName(
                         table_name,
                         table_schema,
                         is_ref.columnName,
                         'fkey',
                     )}',transaction: t});`;
-                    res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintNameByModel(
+                    res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintName(
                         table_name,
                         table_schema,
                         is_ref.columnName,
@@ -731,7 +755,7 @@ export class StringsGeneratorService {
         res_string += `${suffix}`;
         return res_string;
     }
-    private  getConstraintNameByModel(
+    private  getConstraintName(
         table_name: string,
         table_schema: string,
         column_name: string,
