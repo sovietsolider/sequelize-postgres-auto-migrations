@@ -23,8 +23,9 @@ export class Compare {
     ): Promise<{ upString: string; downString: string, addIndexesDownString:string[] }> {
         let upString: string = '';
         let downString: string = '';
-        let orderToAdd: Array<string> = [];
+        let order_to_add_ordinary_table: Array<string> = [];
         let referenced_tables: Array<string> = [];
+        let order_to_add_constraint_table: Array<string> = [];
         let drop_tables_down_string = '';
         let change_column_strings: {
             upString: {
@@ -64,8 +65,10 @@ export class Compare {
         } = {up_string: {add_fk: '', remove_fk: ''}, down_string: {add_fk: '', remove_fk: ''}};
         for(const table of tables) {
             let curr_model = this.modelService.getModelByTableName(sequelize, table.table_name, table.table_schema).getAttributes();
+            let has_ref = false;
             for(const col in curr_model) {
                 if(curr_model[col].references) {
+                    has_ref = true;
                     let curr_ref = this.modelService.getModelReference(curr_model[col].references as {
                         model: string | {
                             tableName: string;
@@ -74,12 +77,18 @@ export class Compare {
                         key: string;
                     });
                     referenced_tables.push(JSON.stringify({table_schema: curr_ref.model.schema, table_name: curr_ref.model.tableName}));
+                    order_to_add_constraint_table.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
                 }
             }
-            orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
+            if(!has_ref)
+                order_to_add_ordinary_table.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
         }
-        if(orderToAdd.length > 1)
-            orderToAdd.sort(this.dbService.cmpTablesByRefInModel(sequelize, this.modelService));
+
+        if(order_to_add_ordinary_table.length > 1) {
+            console.log(order_to_add_constraint_table)
+            order_to_add_constraint_table.sort(this.dbService.cmpTablesByRefInModel(sequelize, this.modelService));
+            console.log(order_to_add_constraint_table)
+        }
         let addTablesStrings: { [x:string]: string } = {}
         for (const table of tables) {
             let removed_fk_obj = (await this.stringGeneratorService.getStringToDropFkBeforeChanging(table.table_name, table.table_schema, (
@@ -146,7 +155,12 @@ export class Compare {
                 change_column_strings.downString.remove_constraints_string.unique += tmp_change_str.downString.remove_constraints_string.unique;            }
         }
         
-        for(const tableToAdd of orderToAdd) {
+        for(const tableToAdd of order_to_add_ordinary_table) {
+            if(addTablesStrings[tableToAdd]) {
+                upString += addTablesStrings[tableToAdd];
+            }
+        }
+        for(const tableToAdd of order_to_add_constraint_table) {
             if(addTablesStrings[tableToAdd]) {
                 upString += addTablesStrings[tableToAdd];
             }
@@ -201,25 +215,32 @@ export class Compare {
     ): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
-        let orderToAdd: Array<string> = [];
-        let tables_for_cmp_funct: {[x:string]: TableToModel} = {};
+        let order_to_add_ordinary_table: Array<string> = [];
+        let order_to_add_constraint_table: Array<string> = [];
+        let tables_with_fk_to_cmp: {[x:string]: TableToModel} = {};
         let referenced_tables: Array<string> = [];
         let addTablesStrings: { [x:string]: string } = {}
         for(const table of schema_tables) {
             if(table.table_name !== 'SequelizeMeta') {
                 let curr_table_info = await this.dbService.tableToModelInfo(sequelize, table.table_schema, table.table_name);
+                let has_ref = false;
                 for(const col in curr_table_info) {
                     if(curr_table_info[col].references) {
                         referenced_tables.push(JSON.stringify({table_schema: curr_table_info[col].references.model.schema, table_name: curr_table_info[col].references.model.tableName}));
+                        tables_with_fk_to_cmp[JSON.stringify({table_schema: table.table_schema, table_name: table.table_name})] = curr_table_info
+                        order_to_add_constraint_table.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
+                        has_ref = true;
                     }
                 }
-                tables_for_cmp_funct[JSON.stringify({table_schema: table.table_schema, table_name: table.table_name})] = curr_table_info
-                orderToAdd.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
+                if(!has_ref)
+                    order_to_add_ordinary_table.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
             }
         }
 
-        if(orderToAdd.length > 1) {
-            orderToAdd.sort(this.dbService.compareTablesByReferencesInDb(tables_for_cmp_funct, this.modelService));
+        
+
+        if(order_to_add_ordinary_table.length > 1) {
+            order_to_add_constraint_table.sort(this.dbService.compareTablesByReferencesInDb(tables_with_fk_to_cmp, this.modelService));
         }
         for (const schema_table of schema_tables) {
             if (schema_table.table_name != 'SequelizeMeta') {
@@ -253,7 +274,12 @@ export class Compare {
                 }
             }
         }
-        for(const tableToAdd of orderToAdd) {
+        for(const tableToAdd of order_to_add_ordinary_table) {
+            if(addTablesStrings[tableToAdd]) {
+                downString += addTablesStrings[tableToAdd];
+            }
+        }
+        for(const tableToAdd of order_to_add_constraint_table) {
             if(addTablesStrings[tableToAdd]) {
                 downString += addTablesStrings[tableToAdd];
             }

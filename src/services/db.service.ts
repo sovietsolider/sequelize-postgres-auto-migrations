@@ -26,6 +26,7 @@ export class DbService {
         return function compareTablesByReferencesInModel(table1_name_str: string, table2_name_str: string) {
             let table1_name: {table_schema:string, table_name: string} = JSON.parse(table1_name_str);
             let table2_name: {table_schema:string, table_name: string} = JSON.parse(table2_name_str);
+            console.log(table1_name_str, table2_name_str)
             let table1 = modelService.getModelByTableName(sequelize, table1_name.table_name, table1_name.table_schema);
             let table2 = modelService.getModelByTableName(sequelize, table2_name.table_name, table2_name.table_schema);
             let table1_attrs = table1.getAttributes();

@@ -9,6 +9,7 @@ import { IndexModel, IndexModel2 } from "./tests/testModels/indexModel";
 import { Model2 } from "./tests/testModels/model2";
 import { Model3 } from "./tests/testModels/Model3";
 import { Model4 } from "./tests/testModels/Model4";
+import { ModelToAdd1 } from "./tests/testModels/modelToAdd1";
 
 export const sequelize = new Sequelize({
     database: 'empty',
