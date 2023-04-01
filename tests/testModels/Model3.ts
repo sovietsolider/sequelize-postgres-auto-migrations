@@ -7,24 +7,18 @@ import {
     ForeignKey,
     BelongsTo,
     HasOne,
-    Index,
-    Unique
+    Index
 } from 'sequelize-typescript';
 import { Model1 } from './Model1';
 
 @Table
-export class Model2 extends Model {
-    @Index
+export class Model3 extends Model {
+    @Index({type: 'FULLTEXT', using:'BTREE', order: 'DESC'})
     @PrimaryKey
     @Column
     pk!: number;
-    @Unique('antihype')
     @Column
     name2!: string;
-    @PrimaryKey
-    @Unique('antihype')
-    @Column(DataType.INTEGER)
-    name3!: string[][]
-    //@HasOne(() => Model1) 
-    //model2!: Model1;
+    @HasOne(() => Model1) 
+    model2!: Model1;
 }

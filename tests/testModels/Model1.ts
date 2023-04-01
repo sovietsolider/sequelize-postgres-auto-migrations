@@ -11,11 +11,12 @@ import {
     Unique
 } from 'sequelize-typescript';
 import { Model2 } from './Model2';
+import { Model3 } from './Model3';
 
 @Table
 export class Model1 extends Model {
     @Index
-    @ForeignKey(() => Model2)
+    @ForeignKey(() => Model3)
     @PrimaryKey
     @Column
     pk!: number;
@@ -24,6 +25,6 @@ export class Model1 extends Model {
     @Column
     name!: string;
 
-    @BelongsTo(() => Model2)
-    model1!: Model2;
+    @BelongsTo(() => Model3, {onUpdate: 'RESTRICT'})
+    model1!: Model3;
 }

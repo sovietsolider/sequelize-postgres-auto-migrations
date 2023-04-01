@@ -20,7 +20,7 @@ export class Compare {
         sequelize: Sequelize,
         schema_tables: Array<any>,
         tables: modelInfoType[],
-    ): Promise<{ upString: string; downString: string, addIndexesDownString:string[] }> {
+    ): Promise<{ upString: string; downString: string }> {
         let upString: string = '';
         let downString: string = '';
         let order_to_add_ordinary_table: Array<string> = [];
@@ -155,7 +155,6 @@ export class Compare {
         
         let strings_to_delete_tables = await this.deleteMissingTablesFromDbString(sequelize, schema_tables, tables);
 
-        
         for(const tableToAdd of order_to_add_ordinary_table) { //adding tables
             if(addTablesStrings[tableToAdd]) {
                 upString += addTablesStrings[tableToAdd];
@@ -208,7 +207,8 @@ export class Compare {
             if(index.down_string.add_index_string!=='')
                 addIndexesDownString.push(index.down_string.add_index_string);
         }
-        return Promise.resolve({ upString, downString, addIndexesDownString });
+        console.log(addIndexesDownString);
+        return Promise.resolve({ upString, downString });
     }
 
     async deleteMissingTablesFromDbString(
@@ -223,6 +223,16 @@ export class Compare {
         let tables_with_fk_to_cmp: {[x:string]: TableToModel} = {};
         let referenced_tables: Array<string> = [];
         let addTablesStrings: { [x:string]: string } = {}
+        let index_strings:Array<{
+            up_string: {
+                add_index_string: string;
+                remove_index_string: string;
+            };
+            down_string: {
+                add_index_string: string;
+                remove_index_string: string;
+            };
+        }> = []
         for(const table of schema_tables) {
             if(table.table_name !== 'SequelizeMeta') {
                 let curr_table_info = await this.dbService.tableToModelInfo(sequelize, table.table_schema, table.table_name);
@@ -238,9 +248,9 @@ export class Compare {
                 if(!has_ref)
                     order_to_add_ordinary_table.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
             }
-        }
+            index_strings.push(await this.stringGeneratorService.getStringOfIndexes(table.table_schema, table.table_name, sequelize));
 
-        
+        }
 
         if(order_to_add_ordinary_table.length > 1) {
             order_to_add_constraint_table.sort(this.dbService.compareTablesByReferencesInDb(tables_with_fk_to_cmp, this.modelService));
@@ -287,6 +297,9 @@ export class Compare {
                 downString += addTablesStrings[tableToAdd];
             }
         }
+        for(const index of index_strings) {
+            downString += index.down_string.add_index_string; //adding index down
+        }   
     
         return Promise.resolve({ upString, downString });
     }

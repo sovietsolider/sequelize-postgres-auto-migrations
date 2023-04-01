@@ -32,7 +32,7 @@ export class AutoMigrations {
             this.sequelize,
         ) as unknown as modelInfoType[];
 
-        let add_strings: { upString: string; downString: string, addIndexesDownString: string[] } =
+        let add_strings: { upString: string; downString: string } =
             await compare.compareTables(this.sequelize, schema_tables, tables); //adding tables
         //let delete_string: { upString: string; downString: string } =
         //    await compare.deleteMissingTablesFromDbString(this.sequelize, schema_tables, tables); //deleting tables
@@ -44,7 +44,6 @@ export class AutoMigrations {
         final_string +=
             '});},down: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         final_string += add_strings.downString;
-        final_string += add_strings.addIndexesDownString;
         //final_string += delete_string.downString;
         final_string += '});},};';
         final_string = beautifier.js_beautify(final_string); 
