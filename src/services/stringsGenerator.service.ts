@@ -20,7 +20,6 @@ export class StringsGeneratorService {
     private dbService: DbService;
     private modelService: ModelService;
     private attrs_to_except = [
-        'type',
         'Model',
         'fieldName',
         '_modelAttribute',
@@ -332,9 +331,6 @@ export class StringsGeneratorService {
             (JSON.stringify(pk_model_fields) !== JSON.stringify(pk_db_fields) || pk_model_fields.some(r => changed_columns.includes(r))) &&
             pk_model_fields[0]
         ) {
-            console.log(pk_model_fields)
-            console.log(pk_db_fields)
-            console.log(changed_columns)
             res_up_string.remove_constr_string.pk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${
                 tableInDb[pk_db_fields[0]].pk_name
             }', {transaction: t});`;
@@ -437,7 +433,7 @@ export class StringsGeneratorService {
             if (!fk_model_fields.includes(field)) {
                 //no fk in model -> delete fk from db
                 res_up_string.remove_constr_string.fk += `await queryInterface.removeConstraint({tableName: '${table_name}', schema: '${table_schema}'}, '${tableInDb[field].fk_name}', {transaction: t});`;
-                res_down_string.add_constr_string.fk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'],references: { table: { tableName: '${tableInDb[field].references.model.tableName}', schema: '${tableInDb[field].references.model.schema}'},field: '${tableInDb[field].references.key}',}, onDelete: '${tableInDb[field].onDelete}',onUpdate: '${tableInDb[field].onUpdate}',transaction: t});`;
+                res_down_string.add_constr_string.fk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'FOREIGN KEY', fields: ['${field}'],references: { table: { tableName: '${tableInDb[field].references.model.tableName}', schema: '${tableInDb[field].references.model.schema}'},field: '${tableInDb[field].references.key}',}, onDelete: '${tableInDb[field].onDelete}',onUpdate: '${tableInDb[field].onUpdate}', name: '${tableInDb[field].fk_name}', transaction: t});`;
             }
         }
         //UNIQUE
@@ -654,11 +650,12 @@ export class StringsGeneratorService {
         let curr_constraints = (await sequelize.query(this.dbService.getColumnsConstraintsSchemaInfo(table_schema, table_name))).at(0) as {constraint_type: string, table_schema: string, constraint_name: string, table_name: string, column_name: string, foreign_table_schema: string, foreign_table_name: string, foreign_column_name:string}[];
         
         for(const raw_index of db_raw_indexes) {
+            console.log(db_raw_indexes)
             db_indexes[raw_index.indexName] = raw_index;
-            if(raw_index.indexName.match(/.*_pkey/) || raw_index.indexName.match(/.*_pk/)) 
+            if(raw_index.indexName.match(/.*_pkey/)) 
                 delete db_indexes[raw_index.indexName];
             for(const constr of curr_constraints) {
-                if(constr.constraint_name == raw_index.indexName && constr.constraint_type === 'UNIQUE')
+                if(constr.constraint_name === raw_index.indexName && constr.constraint_type === 'UNIQUE')
                     delete db_indexes[raw_index.indexName];
             }            
         }
@@ -666,9 +663,11 @@ export class StringsGeneratorService {
         let model_create_indexes_strings = this.getQueryCreateIndexString(table_name, table_schema, this.modelService.getModelByTableName(sequelize, table_name, table_schema), sequelize);
          
         for(const model_index of curr_model.options.indexes as IndexesOptions[]) {
+            console.log(model_index)
             let tmp_model_index = JSON.parse(JSON.stringify(model_index));
             tmp_model_index.transaction = 't';
             if (!Object.keys(db_indexes).includes(model_index.name as string)) {
+                console.log(db_indexes)
                 up_string.add_index_string+= `await queryInterface.addIndex({tableName: '${table_name}', schema: '${table_schema}'}, ${JSON.stringify(tmp_model_index).replace(/"\btransaction":"t"/g, '"transaction": t')});`
                 down_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}', { transaction: t });`;
                 // добавляем индекс

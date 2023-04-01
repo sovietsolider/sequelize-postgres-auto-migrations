@@ -239,4 +239,9 @@ export class ModelService {
             key: string;
         };
     }
+
+    getModelUnique(unique_property: string | {name: string, msg: string} | boolean) {
+        if(typeof unique_property === typeof '')
+            return 
+    }
 }

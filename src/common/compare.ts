@@ -16,7 +16,7 @@ export class Compare {
         this.modelService = _modelService
         this.stringGeneratorService = _stringGeneratorService;
     }
-    async addMissingTablesToDbString(
+    async compareTables(
         sequelize: Sequelize,
         schema_tables: Array<any>,
         tables: modelInfoType[],
@@ -27,6 +27,7 @@ export class Compare {
         let referenced_tables: Array<string> = [];
         let order_to_add_constraint_table: Array<string> = [];
         let drop_tables_down_string = '';
+        let addTablesStrings: { [x:string]: string } = {}
         let change_column_strings: {
             upString: {
                 change_column_string: string;
@@ -83,13 +84,10 @@ export class Compare {
             if(!has_ref)
                 order_to_add_ordinary_table.push(JSON.stringify({table_schema: table.table_schema, table_name: table.table_name}));
         }
-
         if(order_to_add_ordinary_table.length > 1) {
-            console.log(order_to_add_constraint_table)
             order_to_add_constraint_table.sort(this.dbService.cmpTablesByRefInModel(sequelize, this.modelService));
-            console.log(order_to_add_constraint_table)
         }
-        let addTablesStrings: { [x:string]: string } = {}
+        
         for (const table of tables) {
             let removed_fk_obj = (await this.stringGeneratorService.getStringToDropFkBeforeChanging(table.table_name, table.table_schema, (
                 await this.stringGeneratorService.getChangedColumns(sequelize, table.table_schema, table.table_name))));
@@ -155,12 +153,15 @@ export class Compare {
                 change_column_strings.downString.remove_constraints_string.unique += tmp_change_str.downString.remove_constraints_string.unique;            }
         }
         
-        for(const tableToAdd of order_to_add_ordinary_table) {
+        let strings_to_delete_tables = await this.deleteMissingTablesFromDbString(sequelize, schema_tables, tables);
+
+        
+        for(const tableToAdd of order_to_add_ordinary_table) { //adding tables
             if(addTablesStrings[tableToAdd]) {
                 upString += addTablesStrings[tableToAdd];
             }
         }
-        for(const tableToAdd of order_to_add_constraint_table) {
+        for(const tableToAdd of order_to_add_constraint_table) { //adding tables with fk
             if(addTablesStrings[tableToAdd]) {
                 upString += addTablesStrings[tableToAdd];
             }
@@ -183,7 +184,9 @@ export class Compare {
         upString += change_column_strings.upString.add_constraints_string.pk; // adding constraints
         upString += change_column_strings.upString.add_constraints_string.unique;
         upString += change_column_strings.upString.add_constraints_string.fk;
+        upString += strings_to_delete_tables.upString; //deleting tables
 
+        downString += strings_to_delete_tables.downString; //adding tables
         downString += remove_fk_strings.down_string.remove_fk; //removing fk after changing
         downString += change_column_strings.downString.remove_constraints_string.fk; //removing constraints
         downString += change_column_strings.downString.remove_constraints_string.pk; 

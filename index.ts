@@ -21,7 +21,7 @@ export const sequelize = new Sequelize({
     logging: false
 });
 
-//console.log(sequelize.models.Model3.getAttributes())
+//console.log(sequelize.models.Model1.getAttributes())
 //sequelize.sync({force: true});
 let auto_migrations = new AutoMigrations(sequelize);
 auto_migrations.generateMigration('new', '/home/anatoliy/WORK/sequelize-migrations/migrations');

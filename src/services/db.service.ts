@@ -204,7 +204,7 @@ export class DbService {
         let res: TableToModel = {};
         for (const column in table_info) {
             res[column] = {};
-            if (table_info[column].pg_type.match(/\"enum_\.*/)) {
+            if (table_info[column].pg_type.match(/\"enum_\.*/) && table_info[column].column_type !== 'ARRAY') {
                 //ENUM TYPE
                 let type_string = '';
                 type_string += `Sequelize.ENUM(`;
@@ -225,14 +225,29 @@ export class DbService {
                     '[]',
                     '',
                 ) as string;
+                
                 //res[column].noDimensionType = sqlToSeqTypes[final_array_type];
                 for (let i = 0; i < table_info[column].dimension; i++)
                     type_string += `Sequelize.ARRAY(`;
 
-                if (sqlToSeqTypes[final_array_type] === 'Sequelize.STRING')
+                if (sqlToSeqTypes[final_array_type] === 'Sequelize.STRING') {
                     type_string += `Sequelize.STRING(${
                         table_info[column].pg_max_length - pg_magic_round
                     })`;
+                }   
+                else if(final_array_type.match(/\"enum_\.*/)) {
+                    
+                    let enum_values: { enum_range: Array<string> } = (
+                        (
+                            await sequelize.query(
+                                `SELECT enum_range(NULL::${table_info[column].pg_type.replace('[]', '')});`,
+                            )
+                        ).at(0) as Array<any>
+                    ).at(0);
+                    type_string += 'Sequelize.ENUM('
+                    for (const val of enum_values.enum_range) type_string += `'${val}',`;
+                    type_string += ')';
+                }
                 else type_string += `${sqlToSeqTypes[final_array_type]}`;
                 for (let i = 0; i < table_info[column].dimension; i++) {
                     type_string += ')';

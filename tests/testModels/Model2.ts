@@ -19,8 +19,8 @@ export class Model2 extends Model {
     pk!: number;
     @Column
     name2!: string;
-
-    
+    //@Column(DataType.ARRAY(DataType.ENUM("1","2")))
+    //name3!: string[][]
     @HasOne(() => Model1) 
     model2!: Model1;
 }
