@@ -12,19 +12,20 @@ import {
 } from 'sequelize-typescript';
 import { Model2 } from './Model2';
 import { Model3 } from './Model3';
+import { Model4 } from './Model4';
 
 @Table
 export class Model1 extends Model {
     @Index
-    @ForeignKey(() => Model3)
+    @ForeignKey(() => Model4)
     @PrimaryKey
     @Column
-    pk!: number;
+    pk!: string;
 
     @Unique(true)
     @Column
     name!: string;
 
-    @BelongsTo(() => Model3, {onUpdate: 'RESTRICT'})
+    @BelongsTo(() => Model4, {onUpdate: 'RESTRICT'})
     model1!: Model3;
 }

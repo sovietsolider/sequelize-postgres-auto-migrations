@@ -18,11 +18,12 @@ export class Model2 extends Model {
     @PrimaryKey
     @Column
     pk!: number;
+    @PrimaryKey
     @Unique('antihype')
     @Column
     name2!: string;
     @PrimaryKey
-    @Unique('antihype')
+    @Unique('f')
     @Column(DataType.INTEGER)
     name3!: string[][]
     //@HasOne(() => Model1) 

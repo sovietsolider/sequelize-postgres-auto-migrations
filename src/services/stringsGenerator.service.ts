@@ -287,7 +287,6 @@ export class StringsGeneratorService {
         let unique_model_fields: Array<string> = [];
         let unique_db_fields: Array<string> = [];
         let changed_columns = await this.getChangedColumns(this.sequelize, table_schema, table_name);
-        //console.log(changed_columns)
         for (const column in tableInModel) {
             let real_column_name = tableInModel[column].field as string;
             if (tableInModel[column].primaryKey) pk_model_fields.push(real_column_name);
@@ -300,6 +299,7 @@ export class StringsGeneratorService {
             if (tableInDb[column].unique) unique_db_fields.push(column);
         }
         //PRIMARY KEYS
+        console.log(changed_columns)
         if (pk_model_fields.length !== 0 && pk_db_fields.length === 0) {
             res_up_string.add_constr_string.pk += `await queryInterface.addConstraint({tableName: '${table_name}', schema: '${table_schema}'}, { type: 'PRIMARY KEY', fields: ['${pk_model_fields.join(
                 "','",
@@ -381,7 +381,8 @@ export class StringsGeneratorService {
                     'fkey',
                 )}', {transaction: t});`;
             } else {
-
+                //console.log(changed_columns)
+                //console.log(changed_columns.some(r => this.isReferenced(table_name, table_schema, r, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; })))
                 if (((
                     JSON.stringify(
                         this.modelService.getModelReference(
@@ -390,10 +391,14 @@ export class StringsGeneratorService {
                                 key: string;
                             },
                         ),
-                    ) !== JSON.stringify(tableInDb[field].references)) || (tableInModel[field].onDelete !== tableInDb[field].onDelete) || (tableInModel[field].onUpdate !== tableInDb[field].onUpdate || fk_model_fields.some(r => changed_columns.includes(r)))
-                )
+                    ) !== JSON.stringify(tableInDb[field].references)) 
+                    || tableInModel[field].onDelete !== tableInDb[field].onDelete
+                    || tableInModel[field].onUpdate !== tableInDb[field].onUpdate
+                    || fk_model_fields.some(r => changed_columns.includes(r)) 
+                    //|| changed_columns.some(r => this.isReferenced(table_name, table_schema, r, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; }))
+                ) && !removed_fk[JSON.stringify({tableName: table_name, schema: table_schema, columnName: field})]
                 ) {
-
+                    console.log("YES2")
                     let model_ref = this.modelService.getModelReference(
                         tableInModel[field].references as {
                             model: { tableName: string; schema: string } | string;
@@ -432,7 +437,6 @@ export class StringsGeneratorService {
         let model_composite_unique_list: { [key: string]: Array<string> } = {};
         let db_unique_list: { [key: string]: Array<string> } = {};
         for (const field of unique_model_fields) {
-            console.log(typeof tableInModel[field].unique)
             if (typeof tableInModel[field].unique === typeof {}) {
                 if (
                     model_composite_unique_list[
@@ -513,8 +517,6 @@ export class StringsGeneratorService {
                 db_unique_list[tableInDb[field].unique_name as string] = [];
             db_unique_list[tableInDb[field].unique_name as string].push(field);
         }
-        console.log(unique_db_fields);
-        console.log(model_composite_unique_list)
         for (const constr_name in model_composite_unique_list) {
             if (!Object.keys(db_unique_list).includes(constr_name)) {
                 //db doesnt have this unique -> add
@@ -547,7 +549,7 @@ export class StringsGeneratorService {
         return Promise.resolve({ res_up_string, res_down_string });
     }
 
-    async getStringToDropFkBeforeChanging(table_name: string, table_schema: string, changed_columns: string[]) {
+    async getStringToDropFkBeforeChanging(table_name: string, table_schema: string, changed_columns: string[], removed_fk: { [x: string]: boolean }) {
         let res_up_string: {
             add_constr_string: string;
             remove_constr_string: string;
@@ -562,43 +564,47 @@ export class StringsGeneratorService {
             add_constr_string: '',
             remove_constr_string: '',
         };
-        let removed_fk: { [x: string]: boolean } = {};
         let is_fk = (await this.dbService.tableToModelInfo(this.sequelize, table_schema, table_name));
         for (const field of changed_columns) { //если атр был изменён, сбрасываем fk для изменения
-            let is_ref = this.isReferenced(table_name, table_schema, field, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; });
-            if (is_ref) {
-                let ref_table = await this.dbService.tableToModelInfo(this.sequelize, is_ref.schema, is_ref.tableName);
-                if (ref_table[is_ref.columnName].references) {
-                    removed_fk[JSON.stringify({ tableName: table_name, schema: table_schema, columnName: is_ref.columnName })] = true;
-                    let model_ref = this.modelService.getModelReference(
-                        is_ref.column.references as {
-                            model: { tableName: string; schema: string } | string;
-                            key: string;
-                        },
-                    );
-                    //console.log(ref_table)
-                    res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${ref_table[is_ref.columnName].fk_name}', {transaction: t});`;
-                    res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'],references: { table: { tableName: '${model_ref.model.tableName
-                        }', schema: '${model_ref.model.schema}' },field: '${model_ref.key
-                        }',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate
-                        }',name: '${this.getConstraintName(
-                            table_name,
-                            table_schema,
+            if(!removed_fk[JSON.stringify({tableName: table_name, schema: table_schema, columnName: field})]) {
+                console.log("YES1")
+                let is_ref = this.isReferenced(table_name, table_schema, field, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; });
+                if (is_ref) {
+                    console.log("REF")
+                    console.log(is_ref)
+                    let ref_table = await this.dbService.tableToModelInfo(this.sequelize, is_ref.schema, is_ref.tableName);
+                    if (ref_table[is_ref.columnName].references) {
+                        removed_fk[JSON.stringify({ tableName: is_ref.tableName, schema: is_ref.schema, columnName: is_ref.columnName })] = true;
+                        let model_ref = this.modelService.getModelReference(
+                            is_ref.column.references as {
+                                model: { tableName: string; schema: string } | string;
+                                key: string;
+                            },
+                        );
+                        //console.log(ref_table)
+                        res_up_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${ref_table[is_ref.columnName].fk_name}', {transaction: t});`;
+                        res_up_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'],references: { table: { tableName: '${model_ref.model.tableName
+                            }', schema: '${model_ref.model.schema}' },field: '${model_ref.key
+                            }',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate
+                            }',name: '${this.getConstraintName(
+                                is_ref.tableName,
+                                is_ref.schema,
+                                is_ref.columnName,
+                                'fkey',
+                            )}',transaction: t});`;
+                        res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintName(
+                            is_ref.tableName,
+                            is_ref.schema,
                             is_ref.columnName,
                             'fkey',
-                        )}',transaction: t});`;
-                    res_down_string.remove_constr_string += `await queryInterface.removeConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, '${this.getConstraintName(
-                        table_name,
-                        table_schema,
-                        is_ref.columnName,
-                        'fkey',
-                    )}', {transaction: t});`;
-                    res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'], references: { table: { tableName: '${ref_table[is_ref.columnName].references.model.tableName}', schema: '${ref_table[is_ref.columnName].references.model.schema}'},field: '${ref_table[is_ref.columnName].references.key}',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate}',name: '${ref_table[is_ref.columnName].fk_name}',transaction: t});`;
+                        )}', {transaction: t});`;
+                        res_down_string.add_constr_string += `await queryInterface.addConstraint({tableName: '${is_ref.tableName}', schema: '${is_ref.schema}'}, { type: 'FOREIGN KEY', fields: ['${is_ref.columnName}'], references: { table: { tableName: '${ref_table[is_ref.columnName].references.model.tableName}', schema: '${ref_table[is_ref.columnName].references.model.schema}'},field: '${ref_table[is_ref.columnName].references.key}',}, onDelete: '${ref_table[is_ref.columnName].onDelete}',onUpdate: '${ref_table[is_ref.columnName].onUpdate}',name: '${ref_table[is_ref.columnName].fk_name}',transaction: t});`;
+                    }
                 }
             }
 
         }
-        return { res_up_string, res_down_string, removed_fk }
+        return { res_up_string, res_down_string }
     }
 
     isReferenced(table_name: string, table_schema: string, column_name: string, models: {
@@ -660,7 +666,6 @@ export class StringsGeneratorService {
                 let tmp_model_index = JSON.parse(JSON.stringify(model_index));
                 tmp_model_index.transaction = 't';
                 if (!Object.keys(db_indexes).includes(model_index.name as string)) {
-                    console.log(db_indexes)
                     up_string.add_index_string += `await queryInterface.addIndex({tableName: '${table_name}', schema: '${table_schema}'}, ${JSON.stringify(tmp_model_index).replace(/"\btransaction":"t"/g, '"transaction": t')});`
                     down_string.remove_index_string += `await queryInterface.removeIndex({tableName: '${table_name}', schema: '${table_schema}'}, '${model_index.name}', { transaction: t });`;
                     // добавляем индекс
@@ -797,6 +802,7 @@ export class StringsGeneratorService {
             options.fk_name = undefined;
             options.pk_name = undefined;
             options.foreignKey = undefined;
+            options.unique = undefined;
             res_string += `${JSON.stringify(options)}, `;
             res_string = res_string.replace(
                 /"\btype":"Sequelize.\b[^"]*"/g,

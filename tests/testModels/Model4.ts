@@ -12,13 +12,13 @@ import {
 import { Model1 } from './Model1';
 
 @Table
-export class Model3 extends Model {
-    @Index({type: 'FULLTEXT', using:'BTREE', order: 'DESC'})
-    //@PrimaryKey
+export class Model4 extends Model {
     @Column
     pk!: number;
+    @HasOne(() => Model1) 
+    model2!: Model1;
+
+    @PrimaryKey
     @Column
-    name2!: string;
-    //@HasOne(() => Model1) 
-    //model2!: Model1;
+    pk2!: string;
 }

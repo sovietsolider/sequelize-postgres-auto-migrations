@@ -135,29 +135,6 @@ export interface WhereToSqlInterface {
      
 }
 
-export const WhereToSql = {
-    '[Op.eq]': '=',                         
-    '[Op.ne]': '!=',                      
-    '[Op.is]': 'IS',                        // IS NULL
-    '[Op.not]': 'IS NOT',                          // IS NOT TRUE
-    '[Op.or]': 'OR',
-    '[Op.gt]': '>',                              // > 6
-    '[Op.gte]': '>=',                             // >= 6
-    '[Op.lt]': '<',                             // < 10
-    '[Op.lte]': '<=',                            // <= 10
-    '[Op.between]': 'BETWEEN',                   // BETWEEN 6 AND 10
-    '[Op.notBetween]': 'NOT BETWEEN',               // NOT BETWEEN 11 AND 15
-    '[Op.all]': '> ALL', // > ALL (SELECT 1)
-    '[Op.in]': 'IN',                         // IN [1, 2]
-    '[Op.notIn]': 'NOT IN',                      // NOT IN [1, 2]
-    '[Op.like]': 'LIKE',                       // LIKE '%hat'
-    '[Op.notLike]': 'NOT LIKE',                    // NOT LIKE '%hat'
-    '[Op.startsWith]': 'LIKE',                  // LIKE 'hat%'
-    '[Op.endsWith]': 'LIKE',                    // LIKE '%hat'
-    '[Op.substring]': 'LIKE',                   // LIKE '%hat%'
-    '[Op.any]': 'ANY',                        // ANY (ARRAY[2, 3]::INTEGER[]) (PG only)
-}
-
 export interface MigrationOptions {
     dropTableOnDelete: string|undefined;
 

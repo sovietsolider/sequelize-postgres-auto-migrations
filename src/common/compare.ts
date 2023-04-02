@@ -90,8 +90,8 @@ export class Compare {
         
         for (const table of tables) {
             let removed_fk_obj = (await this.stringGeneratorService.getStringToDropFkBeforeChanging(table.table_name, table.table_schema, (
-                await this.stringGeneratorService.getChangedColumns(sequelize, table.table_schema, table.table_name))));
-            this.removed_fk = Object.assign(this.removed_fk, removed_fk_obj.removed_fk);
+                await this.stringGeneratorService.getChangedColumns(sequelize, table.table_schema, table.table_name)), this.removed_fk));
+            //this.removed_fk = Object.assign(this.removed_fk, removed_fk_obj.removed_fk);
 
             remove_fk_strings.up_string.remove_fk += removed_fk_obj.res_up_string.remove_constr_string;
             remove_fk_strings.up_string.add_fk += removed_fk_obj.res_up_string.add_constr_string;  
@@ -152,7 +152,6 @@ export class Compare {
                 change_column_strings.downString.remove_constraints_string.pk += tmp_change_str.downString.remove_constraints_string.pk;
                 change_column_strings.downString.remove_constraints_string.unique += tmp_change_str.downString.remove_constraints_string.unique;            }
         }
-        
         let strings_to_delete_tables = await this.deleteMissingTablesFromDbString(sequelize, schema_tables, tables);
 
         for(const tableToAdd of order_to_add_ordinary_table) { //adding tables
@@ -179,9 +178,9 @@ export class Compare {
         for(const index of index_strings) {
             upString += index.up_string.add_index_string //adding index
         } 
-        upString += remove_fk_strings.up_string.add_fk; //adding fk after changing
         upString += change_column_strings.upString.add_constraints_string.pk; // adding constraints
         upString += change_column_strings.upString.add_constraints_string.unique;
+        upString += remove_fk_strings.up_string.add_fk; //adding fk after changing
         upString += change_column_strings.upString.add_constraints_string.fk;
         upString += strings_to_delete_tables.upString; //deleting tables
 
@@ -194,9 +193,9 @@ export class Compare {
         downString += change_column_strings.downString.remove_column_string; //removing columns
         downString += change_column_strings.downString.add_column_string; //adding columns
         downString += change_column_strings.downString.change_column_string; //change columns
-        downString += remove_fk_strings.down_string.add_fk //adding fk;
         downString += change_column_strings.downString.add_constraints_string.pk; // adding constraints
         downString += change_column_strings.downString.add_constraints_string.unique;
+        downString += remove_fk_strings.down_string.add_fk //adding fk;
         downString += change_column_strings.downString.add_constraints_string.fk;
         for(const index of index_strings) {
             downString += index.down_string.remove_index_string; //deleting index down
@@ -207,7 +206,6 @@ export class Compare {
             if(index.down_string.add_index_string!=='')
                 addIndexesDownString.push(index.down_string.add_index_string);
         }
-        console.log(addIndexesDownString);
         return Promise.resolve({ upString, downString });
     }
 
@@ -278,12 +276,6 @@ export class Compare {
                     addTablesStrings[JSON.stringify({table_schema: schema_table.table_schema, table_name: schema_table.table_name})] = await this.stringGeneratorService.getDownStringToAddTable(
                         sequelize, schema_table.table_schema, schema_table.table_name
                     );
-                    /*
-                    downString += await this.stringGeneratorService.getDownStringToAddTable(
-                        sequelize,
-                        schema_table.table_schema,
-                        schema_table.table_name,
-                    );*/
                 }
             }
         }

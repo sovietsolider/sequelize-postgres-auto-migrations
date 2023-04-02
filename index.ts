@@ -8,14 +8,15 @@ import { IndexModel, IndexModel2 } from "./tests/testModels/indexModel";
 import { Model2 } from "./tests/testModels/Model2";
 import { Model1 } from "./tests/testModels/Model1";
 import { Model3 } from "./tests/testModels/Model3";
-
+import { Model4 } from "./tests/testModels/Model4";
+import { TypesModel } from "./tests/testModels/modelTypeCheck";
 export const sequelize = new Sequelize({
     database: 'empty',
     dialect: 'postgres',
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [/*Model1, Model2, Model3*/],
+    models: [Model4, Model1, Model2, Model3],
     define: {
         freezeTableName: true,
     },
