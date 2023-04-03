@@ -7,7 +7,9 @@ import {
     ForeignKey,
     BelongsTo,
     HasOne,
-    Index
+    Index,
+    Unique,
+    Default
 } from 'sequelize-typescript';
 import { Model1 } from './Model1';
 
@@ -20,5 +22,9 @@ export class Model4 extends Model {
 
     @PrimaryKey
     @Column
-    pk2!: string;
+    pk2!: number;
+
+    @Unique(false)
+    @Column
+    unCol!: string
 }

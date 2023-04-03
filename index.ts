@@ -16,14 +16,12 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model4, Model1, Model2, Model3],
+    models: [Model2, Model3, Model1, Model4],
     define: {
         freezeTableName: true,
     },
     logging: false
 });
 
-//console.log(sequelize.models.Model1.getAttributes())
-//sequelize.sync({force: true});
 let auto_migrations = new AutoMigrations(sequelize);
-auto_migrations.generateMigration('new', '/home/anatoliy/WORK/sequelize-migrations/migrations');
+auto_migrations.generateMigration('new', './migrations');

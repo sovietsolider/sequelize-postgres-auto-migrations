@@ -8,7 +8,4 @@ import { StringsGeneratorService } from '../services/stringsGenerator.service';
 import * as beautifier from 'js-beautify';
 import { MigrationOptions } from './interfaces';
 
-export async function compareTables(sequelize: Sequelize, pathToMigrationFile: string) {
-    
-    
-}
+export async function compareTables(sequelize: Sequelize, pathToMigrationFile: string) {}

@@ -131,11 +131,6 @@ export interface comparisonOptions {
     replaceTableWhenAttributesMatch: boolean;
 }
 
-export interface WhereToSqlInterface {
-     
-}
-
 export interface MigrationOptions {
-    dropTableOnDelete: string|undefined;
-
+    dropTableOnDelete: string | undefined;
 }

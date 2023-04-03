@@ -17,13 +17,17 @@ export class AutoMigrations {
     }
 
     async generateMigration(name: string, path: string) {
-        let fileService = new FileService;
+        let fileService = new FileService();
         let path_ = fileService.generateMigrationFile(name, path);
         let modelService = new ModelService(this.sequelize);
         let dbService = new DbService(this.sequelize, modelService);
-        let stringGeneratorService = new StringsGeneratorService(this.sequelize, dbService, modelService);
-        let compare = new Compare(this.sequelize, dbService, modelService, stringGeneratorService)
-        
+        let stringGeneratorService = new StringsGeneratorService(
+            this.sequelize,
+            dbService,
+            modelService,
+        );
+        let compare = new Compare(this.sequelize, dbService, modelService, stringGeneratorService);
+
         const schema_info_tables = await this.sequelize.query(
             "SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema!='pg_catalog' AND table_schema!='information_schema'",
         );
@@ -32,11 +36,14 @@ export class AutoMigrations {
             this.sequelize,
         ) as unknown as modelInfoType[];
 
-        let add_strings: { upString: string; downString: string } =
-            await compare.compareTables(this.sequelize, schema_tables, tables); //adding tables
+        let add_strings: { upString: string; downString: string } = await compare.compareTables(
+            this.sequelize,
+            schema_tables,
+            tables,
+        ); //adding tables
         //let delete_string: { upString: string; downString: string } =
         //    await compare.deleteMissingTablesFromDbString(this.sequelize, schema_tables, tables); //deleting tables
-    
+
         let final_string =
             'module.exports = { up: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         final_string += add_strings.upString;
@@ -46,7 +53,7 @@ export class AutoMigrations {
         final_string += add_strings.downString;
         //final_string += delete_string.downString;
         final_string += '});},};';
-        final_string = beautifier.js_beautify(final_string); 
+        final_string = beautifier.js_beautify(final_string);
         fileService.writeToMigrationFile(path_, final_string);
     }
 }

@@ -1,5 +1,4 @@
 import { Table, Column, Model, HasMany, DataType, PrimaryKey, AutoIncrement, BelongsTo, ForeignKey, AllowNull, HasOne, Unique, Index, createIndexDecorator } from 'sequelize-typescript';
-import { Model1 } from './model1';
 
 const JobIndex = createIndexDecorator({
     // index options
