@@ -177,7 +177,7 @@ export class Compare {
                     }),
                 );
         }
-        if (order_to_add_ordinary_table.length > 1) {
+        if (order_to_add_constraint_table.length > 1) {
             order_to_add_constraint_table.sort(
                 this.dbService.cmpTablesByRefInModel(sequelize, this.modelService),
             );
@@ -454,8 +454,7 @@ export class Compare {
                 ),
             );
         }
-
-        if (order_to_add_ordinary_table.length > 1) {
+        if (order_to_add_constraint_table.length > 1) {
             order_to_add_constraint_table.sort(
                 this.dbService.compareTablesByReferencesInDb(
                     tables_with_fk_to_cmp,

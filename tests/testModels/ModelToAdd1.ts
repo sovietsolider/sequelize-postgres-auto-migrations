@@ -11,8 +11,9 @@ import {
     Unique
 } from 'sequelize-typescript';
 import { Model1 } from './Model1';
+import { Model4 } from './Model4';
 
-@Table({tableName: 'newTable1'})
+@Table({tableName: 'newTable1', schema: 'temp'})
 export class ModelToAdd1 extends Model {
     @Index('1')
     @PrimaryKey
@@ -47,4 +48,11 @@ export class ModelToAdd1 extends Model {
 
     @Column(DataType.DOUBLE)
     col10!: string
+
+    @ForeignKey(() => Model1)
+    @Column
+    colFkToModel1!: number
+
+    @BelongsTo(() => Model1)
+    model1!: Model1
 }

@@ -17,7 +17,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [ModelToAdd1],
+    models: [],
     define: {
         freezeTableName: true,
     },

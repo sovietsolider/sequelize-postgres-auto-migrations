@@ -14,6 +14,7 @@ import {
 import { Model2 } from './Model2';
 import { Model3 } from './Model3';
 import { Model4 } from './Model4';
+import { ModelToAdd1 } from './ModelToAdd1';
 
 @Table
 export class Model1 extends Model {
@@ -27,6 +28,12 @@ export class Model1 extends Model {
     @Column
     name!: string;
 
+    @Column
+    newFk!: number
+
     @BelongsTo(() => Model4, {onUpdate: 'RESTRICT'})
     model1!: Model3;
+
+    @HasOne(() => ModelToAdd1)
+    modelToAdd1!: ModelToAdd1;
 }
