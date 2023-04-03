@@ -21,10 +21,10 @@ export class Model2 extends Model {
     @PrimaryKey
     @Unique('antihype')
     @Column
-    name2!: string;
+    name2!: number;
     @PrimaryKey
-    @Unique('f')
-    @Column(DataType.INTEGER)
+    @Unique('antihype')
+    @Column(DataType.STRING)
     name3!: string[][]
     //@HasOne(() => Model1) 
     //model2!: Model1;

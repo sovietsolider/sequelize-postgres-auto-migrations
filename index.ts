@@ -10,18 +10,19 @@ import { Model1 } from "./tests/testModels/Model1";
 import { Model3 } from "./tests/testModels/Model3";
 import { Model4 } from "./tests/testModels/Model4";
 import { TypesModel } from "./tests/testModels/modelTypeCheck";
+import { ModelToAdd1 } from "./tests/testModels/ModelToAdd1";
 export const sequelize = new Sequelize({
     database: 'empty',
     dialect: 'postgres',
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model2, Model3, Model1, Model4],
+    models: [ModelToAdd1],
     define: {
         freezeTableName: true,
     },
     logging: false
 });
-
 let auto_migrations = new AutoMigrations(sequelize);
 auto_migrations.generateMigration('new', './migrations');
+

@@ -40,18 +40,14 @@ export class AutoMigrations {
             this.sequelize,
             schema_tables,
             tables,
-        ); //adding tables
-        //let delete_string: { upString: string; downString: string } =
-        //    await compare.deleteMissingTablesFromDbString(this.sequelize, schema_tables, tables); //deleting tables
+        ); 
 
         let final_string =
             'module.exports = { up: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         final_string += add_strings.upString;
-        //final_string += delete_string.upString;
         final_string +=
             '});},down: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         final_string += add_strings.downString;
-        //final_string += delete_string.downString;
         final_string += '});},};';
         final_string = beautifier.js_beautify(final_string);
         fileService.writeToMigrationFile(path_, final_string);

@@ -222,8 +222,6 @@ export class Compare {
                     res_up_unique_string,
                     res_down_unique_string,
                 );
-                console.log('RES UP UNIQUE STRING');
-                console.log(res_up_unique_string);
                 let is_cascade = false;
                 if (
                     referenced_tables.includes(
