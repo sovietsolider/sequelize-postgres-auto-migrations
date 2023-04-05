@@ -1,7 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
 import { FileService } from '../services/file.service';
-import { compareTables } from './cmpFunctions';
-import { MigrationOptions } from './interfaces';
 import { DbService } from '../services/db.service';
 import { StringsGeneratorService } from '../services/stringsGenerator.service';
 import { ModelService } from '../services/model.service';
@@ -10,7 +8,7 @@ import { Compare } from './compare';
 import * as beautifier from 'js-beautify';
 
 export class AutoMigrations {
-    sequelize: Sequelize;
+    private sequelize: Sequelize;
 
     constructor(sequelize: Sequelize) {
         this.sequelize = sequelize;

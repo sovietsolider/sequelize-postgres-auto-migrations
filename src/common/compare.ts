@@ -355,7 +355,7 @@ export class Compare {
         return Promise.resolve({ upString, downString });
     }
 
-    async deleteMissingTablesFromDbString(
+    private async deleteMissingTablesFromDbString(
         sequelize: Sequelize,
         schema_tables: Array<any>,
         tables: modelInfoType[],

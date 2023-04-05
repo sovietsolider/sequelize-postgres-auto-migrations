@@ -345,7 +345,7 @@ export class DbService {
         return Promise.resolve(res);
     }
 
-    parseDefaultValue(column_info: SchemaColumnType) {
+    private parseDefaultValue(column_info: SchemaColumnType) {
         let default_value = column_info.default_value as string;
         default_value = default_value.replace(/ARRAY/g, '');
         default_value = default_value.replace(/::character varying\([^)]*\)/g, '');
@@ -384,17 +384,5 @@ export class DbService {
             `SELECT tablename as "tableName", indexname as "indexName",indexdef as "indexDef" FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`,
         );
         return Promise.resolve(res);
-    }
-
-    async getForeignKeyRules(
-        sequelize: Sequelize,
-        fk_name: string,
-    ): Promise<{ update_rule: string; delete_rule: string }> {
-        let res = (await sequelize.query(
-            `SELECT UPDATE_RULE, DELETE_RULE FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '${fk_name}'`,
-        )) as unknown as [];
-        return Promise.resolve(
-            res.at(0) as unknown as { update_rule: string; delete_rule: string },
-        );
     }
 }

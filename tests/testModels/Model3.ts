@@ -16,5 +16,5 @@ import { Model1 } from './Model1';
 export class Model3 extends Model {
     @PrimaryKey
     @Column
-    pk!: number;
+    pk!: string;
 }
