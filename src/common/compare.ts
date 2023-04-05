@@ -198,7 +198,7 @@ export class Compare {
                         element.table_schema === table?.table_schema,
                 )
             ) {
-                console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
+                //console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
                 let curr_model = this.modelService.getModelByTableName(
                     sequelize,
                     table?.table_name,
@@ -485,9 +485,9 @@ export class Compare {
                         res_down_unique_string,
                         curr_db_table,
                     );
-                    console.log(
+                    /*console.log(
                         `Deleting table: ${schema_table.table_schema}.${schema_table.table_name}`,
-                    );
+                    );*/
                     //upString
                     let is_cascade = false;
                     if (

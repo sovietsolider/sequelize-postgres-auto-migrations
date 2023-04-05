@@ -17,8 +17,6 @@ export class AutoMigrations {
     }
 
     async generateMigration(name: string, path: string) {
-        let fileService = new FileService();
-        let path_ = fileService.generateMigrationFile(name, path);
         let modelService = new ModelService(this.sequelize);
         let dbService = new DbService(this.sequelize, modelService);
         let stringGeneratorService = new StringsGeneratorService(
@@ -50,6 +48,11 @@ export class AutoMigrations {
         final_string += add_strings.downString;
         final_string += '});},};';
         final_string = beautifier.js_beautify(final_string);
-        fileService.writeToMigrationFile(path_, final_string);
+        //console.log(final_string)
+        let fileService = new FileService(this.sequelize);
+        if((add_strings.upString !== '' || add_strings.downString !== '') && await fileService.checkMigrationHasRun(path)) {
+            let path_ = await fileService.generateMigrationFile(name, path);
+            fileService.writeToMigrationFile(path_, final_string);
+        }
     }
 }

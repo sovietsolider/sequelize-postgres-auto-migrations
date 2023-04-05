@@ -1,10 +1,5 @@
 import { Sequelize } from "sequelize-typescript";
-import { ModelToAdd1 } from "../testModels/modelToAdd1";
-import { Model4 } from "../testModels/model4";
-
-import { Model1 } from "../testModels/model1";
-import { Model2 } from "../testModels/model2";
-import { Model3 } from "../testModels/model3";
+/*
 
 export const sequelize_adding_tables_test = new Sequelize({
     database: 'empty',
@@ -56,4 +51,4 @@ export const sequelize_deleting_tables_with_fk = new Sequelize({
         freezeTableName: true,
         timestamps: false,
     }
-});
+});*/

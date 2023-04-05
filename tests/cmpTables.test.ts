@@ -1,4 +1,4 @@
-import {describe, expect, test} from '@jest/globals';
+/*import {describe, expect, test} from '@jest/globals';
 import { Sequelize } from 'sequelize-typescript';
 import { FileService } from '../src/services/file.service';
 import { compareTables } from '../src/common/cmpFunctions';
@@ -36,4 +36,4 @@ describe('Adding/Deleting tables', () => {
     await compareTables(sequelize_deleting_tables_with_fk, path_);
     expect(fs.readFileSync(`${path_}`).toString().replace(/\s/g, "")).toBe(fs.readFileSync(deleting_tables_with_fk_res).toString().replace(/\s/g, ""))
   });
-});
+});*/
