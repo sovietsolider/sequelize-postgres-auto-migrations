@@ -1,5 +1,10 @@
 import { AutoMigrations } from "./src/common/auto-migrations";
 import { Sequelize } from "sequelize-typescript";
+import { Model1 } from "./tests/testModels/Model1";
+import { Model2 } from "./tests/testModels/Model2";
+import { Model3 } from "./tests/testModels/Model3";
+import { Model4 } from "./tests/testModels/Model4";
+import { ModelToAdd1 } from "./tests/testModels/ModelToAdd1";
 
 export const sequelize = new Sequelize({
     database: 'empty',

@@ -23,7 +23,6 @@ export class Model1 extends Model {
     @Column
     pk!: number;
 
-    @AllowNull(false)
     @Unique(false)
     @Column
     name!: string;
@@ -31,7 +30,7 @@ export class Model1 extends Model {
     @Column
     newFk!: number
 
-    @BelongsTo(() => Model4, {onUpdate: 'RESTRICT'})
+    @BelongsTo(() => Model4, {onUpdate: 'CASCADE', onDelete: 'CASCADE'})
     model1!: Model3;
 
     @HasOne(() => ModelToAdd1)
