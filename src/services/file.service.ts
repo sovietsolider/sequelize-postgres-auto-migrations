@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { resolve } from 'path';
-import { Sequelize } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
 
 export class FileService {
     private sequelize: Sequelize;
@@ -42,6 +42,9 @@ export class FileService {
 
     async checkMigrationHasRun(migration_path: string): Promise<boolean> {
         let migrations: string[] = fs.readdirSync(migration_path);
+        let all_tables = ((await this.sequelize.query('SELECT table_name FROM information_schema.tables')).at(0)) as Array<any>;
+        if(!all_tables.find(r => r.table_name === 'SequelizeMeta'))
+            return Promise.resolve(true);
         let migrations_in_db = ((await this.sequelize.query('SELECT * FROM "SequelizeMeta" ORDER BY name DESC')).at(0) as unknown as {name:string}[]).map(r => r.name);
         if(migrations.filter(r => !migrations_in_db.includes(r)).length !== 0) {
             let res_string = `Migrations weren't executed: [${migrations.filter(r => !migrations_in_db.includes(r)).join(', ')}]`

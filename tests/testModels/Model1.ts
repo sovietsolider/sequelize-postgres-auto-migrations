@@ -4,35 +4,28 @@ import {
     Table,
     DataType,
     PrimaryKey,
-    HasOne,
-    ForeignKey,
-    BelongsTo,
-    Index,
-    Unique,
-    AllowNull
 } from 'sequelize-typescript';
-import { Model2 } from './Model2';
-import { Model3 } from './Model3';
-import { Model4 } from './Model4';
-import { ModelToAdd1 } from './ModelToAdd1';
 
 @Table
 export class Model1 extends Model {
-    @ForeignKey(() => Model4)
-    @PrimaryKey
-    @Column
-    pk!: number;
+    @Column(DataType.ARRAY(DataType.BIGINT))
+    col1!: number[]
+    @Column(DataType.BLOB)
+    col2!: number;
+    @Column(DataType.BOOLEAN)
+    col3!: boolean
+    @Column(DataType.CHAR)
+    col4!: string
+    @Column(DataType.CIDR)
+    col5!: string
 
-    @Unique(false)
-    @Column
-    name!: string;
+    @Column(DataType.DATE)
+    col7!: string
+    @Column(DataType.DATEONLY)
+    col8!: string
+    @Column(DataType.DECIMAL(10, 2))
+    col9!: number
+    @Column(DataType.DOUBLE)
+    col10!: string
 
-    @Column
-    newFk!: number
-
-    @BelongsTo(() => Model4, {onUpdate: 'CASCADE', onDelete: 'CASCADE'})
-    model1!: Model3;
-
-    @HasOne(() => ModelToAdd1)
-    modelToAdd1!: ModelToAdd1;
 }

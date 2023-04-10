@@ -1,4 +1,10 @@
 {
+  "name": "sequelize-postgres-auto-migrations",
+  "version": "1.0.5",
+  "author": "Anatoliy Golikov",
+  "main": "./dist/src/common/auto-migrations.js",
+  "types": "./src/common/auto-migrations.ts",
+  "type":"commonjs",
   "scripts": {
     "test": "jest",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"
@@ -17,6 +23,7 @@
     "js-beautify": "^1.14.7",
     "pg": "^8.9.0",
     "reflect-metadata": "^0.1.13",
+    "semver": "^7.3.8",
     "sequelize": "^6.29.0",
     "sequelize-cli": "^6.6.0",
     "sequelize-typescript": "^2.1.5",
