@@ -39,9 +39,15 @@ class FileService {
     }
     async checkMigrationHasRun(migration_path) {
         let migrations = fs.readdirSync(migration_path);
+        console.log(migration_path);
+        console.log(migrations);
         let all_tables = ((await this.sequelize.query('SELECT table_name FROM information_schema.tables')).at(0));
-        if (!all_tables.find(r => r.table_name === 'SequelizeMeta'))
+        if (!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length === 0)
             return Promise.resolve(true);
+        else if (!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length !== 0) {
+            console.log(false);
+            return Promise.resolve(false);
+        }
         let migrations_in_db = (await this.sequelize.query('SELECT * FROM "SequelizeMeta" ORDER BY name DESC')).at(0).map(r => r.name);
         if (migrations.filter(r => !migrations_in_db.includes(r)).length !== 0) {
             let res_string = `Migrations weren't executed: [${migrations.filter(r => !migrations_in_db.includes(r)).join(', ')}]`;

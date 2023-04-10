@@ -1,6 +1,6 @@
 {
   "name": "sequelize-postgres-auto-migrations",
-  "version": "1.0.6",
+  "version": "1.0.11",
   "author": "Anatoliy Golikov",
   "main": "./dist/src/common/auto-migrations.js",
   "types": "./src/common/auto-migrations.ts",
