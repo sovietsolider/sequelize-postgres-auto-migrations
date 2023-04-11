@@ -8,7 +8,6 @@ export class FileService {
         this.sequelize = _sequelize;
     }
 
-
     generateDownString(): string {
         return 'down: async (queryInterface, Sequelize) => { await queryInterface.sequelize.transaction(async (t) => {';
     }
@@ -20,7 +19,6 @@ export class FileService {
             .slice(0, -3)}-${migrationName}`;
     }
     writeToMigrationFile(path: string, content: string) {
-        //console.log(content)
         try {
             fs.appendFileSync(path, content);
         } catch (error) {
@@ -29,8 +27,6 @@ export class FileService {
     }
 
     async generateMigrationFile(migrationName: string, path: string): Promise<string> {
-        //console.log(await this.checkMigrationHasRun(path));
-        //let content: string = 'module.exports = { up: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         let res_path: string = `${path}/${this.generateFileName(migrationName)}.js`;
         try {
             fs.writeFileSync(res_path, '');
@@ -42,11 +38,12 @@ export class FileService {
 
     async checkMigrationHasRun(migration_path: string): Promise<boolean> {
         let migrations: string[] = fs.readdirSync(migration_path);
-
-        let all_tables = ((await this.sequelize.query('SELECT table_name FROM information_schema.tables')).at(0)) as Array<any>;
+        
+        let all_tables = (await this.sequelize.query('SELECT table_name as table_name FROM information_schema.tables')).at(0) as Array<any>;
+        //console.log(all_tables.find(r => r.table_name === 'SequelizeMeta'))
         if(!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length === 0)
             return Promise.resolve(true);
-        else if(!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length === 1) {
+        else if(!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length !== 0) {
             return Promise.resolve(false);
         }
             

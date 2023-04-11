@@ -17,7 +17,6 @@ class FileService {
             .slice(0, -3)}-${migrationName}`;
     }
     writeToMigrationFile(path, content) {
-        //console.log(content)
         try {
             fs.appendFileSync(path, content);
         }
@@ -26,8 +25,6 @@ class FileService {
         }
     }
     async generateMigrationFile(migrationName, path) {
-        //console.log(await this.checkMigrationHasRun(path));
-        //let content: string = 'module.exports = { up: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         let res_path = `${path}/${this.generateFileName(migrationName)}.js`;
         try {
             fs.writeFileSync(res_path, '');
@@ -39,13 +36,11 @@ class FileService {
     }
     async checkMigrationHasRun(migration_path) {
         let migrations = fs.readdirSync(migration_path);
-        console.log(migration_path);
-        console.log(migrations);
-        let all_tables = ((await this.sequelize.query('SELECT table_name FROM information_schema.tables')).at(0));
+        let all_tables = (await this.sequelize.query('SELECT table_name as table_name FROM information_schema.tables')).at(0);
+        //console.log(all_tables.find(r => r.table_name === 'SequelizeMeta'))
         if (!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length === 0)
             return Promise.resolve(true);
         else if (!all_tables.find(r => r.table_name === 'SequelizeMeta') && migrations.length !== 0) {
-            console.log(false);
             return Promise.resolve(false);
         }
         let migrations_in_db = (await this.sequelize.query('SELECT * FROM "SequelizeMeta" ORDER BY name DESC')).at(0).map(r => r.name);
