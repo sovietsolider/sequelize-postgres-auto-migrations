@@ -17,4 +17,9 @@ export declare class DbService {
     private parseDefaultValue;
     getColumnsConstraintsSchemaInfo(table_schema: string, table_name: string): string;
     getTableIndexes(table_schema: string, table_name: string, sequelize: Sequelize): Promise<[unknown[], unknown]>;
+    getTableColumnsComments(table_schema: string, table_name: string, sequelize: Sequelize): Promise<{
+        column_name: string;
+        col_description: string;
+    }[]>;
+    getTableExists(table_schema: string, table_name: string, sequelize: Sequelize): Promise<boolean>;
 }

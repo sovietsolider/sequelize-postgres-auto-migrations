@@ -109,6 +109,9 @@ export class ModelService {
             'values',
             'name',
             'unique',
+            'get',
+            'validate',
+            'comment'
         ];
         let res_string = '';
         for (const attr in description) {
@@ -120,6 +123,10 @@ export class ModelService {
                         description[attr].type,
                     )},`;
                 }
+                if(inside_attr === 'comment' && description[attr].comment != undefined)
+                    res_string += `${inside_attr}: '${description[attr].comment}',`;
+                else if(inside_attr === 'comment' && description[attr].comment === undefined)
+                    res_string += `${inside_attr}: ${description[attr].comment},`;
                 if (inside_attr === 'references') {
                     let reference = this.getModelReference(
                         description[attr][inside_attr] as {
@@ -174,12 +181,19 @@ export class ModelService {
             'pk_name',
             'fk_name',
             'unique_name',
+            'get',
+            'validate',
+            'comment'
         ];
         let res_string = '';
         for (const inside_attr in description[attr]) {
             if (inside_attr === 'type') {
                 res_string += `${inside_attr}: ${this.getTypeByModelAttr(description[attr].type)},`;
             }
+            if(inside_attr === 'comment' && description[attr].comment !== undefined)
+                    res_string += `${inside_attr}: '${description[attr].comment}',`;
+            else if(inside_attr === 'comment' && description[attr].comment === undefined)
+                res_string += `${inside_attr}: ${description[attr].comment},`;
             if (!attrs_to_except.includes(inside_attr)) {
                 res_string += `${inside_attr}: ${description[attr][inside_attr as keyof object]},`;
             }

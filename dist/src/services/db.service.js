@@ -103,6 +103,10 @@ class DbService {
         const schema_table_columns_constraints = (await sequelize.query(`${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`)).at(0);
         //console.log(schema_table_columns_constraints);
         const pg_types = await sequelize.query(this.getPgColumnsInfo(table_schema, table_name));
+        //console.log(await this.getTableExists(table_schema, table_name, sequelize));
+        let schema_table_columns_comments = [];
+        if (await this.getTableExists(table_schema, table_name, sequelize))
+            schema_table_columns_comments = await this.getTableColumnsComments(table_schema, table_name, sequelize);
         for (const column of schema_table_columns) {
             res[column.column_name] = {
                 table_schemas: column.table_schema,
@@ -124,6 +128,7 @@ class DbService {
                 pg_max_length: column.atttypmod,
                 primary_key: undefined,
                 unique: undefined,
+                comment: undefined
             };
             for (const constraint of schema_table_columns_constraints) {
                 if (column.column_name === constraint.column_name &&
@@ -143,6 +148,11 @@ class DbService {
                     constraint.constraint_type === 'UNIQUE') {
                     res[column.column_name].unique = true;
                     res[column.column_name].unique_constraint_name = constraint.constraint_name;
+                }
+            }
+            for (const col of schema_table_columns_comments) {
+                if (col.column_name === column.column_name && col.col_description !== null) {
+                    res[column.column_name].comment = col.col_description;
                 }
             }
         }
@@ -228,6 +238,7 @@ class DbService {
                 res[column].unique = true;
                 res[column].unique_name = table_info[column].unique_constraint_name;
             }
+            res[column].comment = table_info[column].comment;
         }
         return Promise.resolve(res);
     }
@@ -266,6 +277,19 @@ class DbService {
     async getTableIndexes(table_schema, table_name, sequelize) {
         let res = await sequelize.query(`SELECT tablename as "tableName", indexname as "indexName",indexdef as "indexDef" FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`);
         return Promise.resolve(res);
+    }
+    async getTableColumnsComments(table_schema, table_name, sequelize) {
+        let res = await sequelize.query(`select column_name, col_description('"${table_schema}"."${table_name}"'::regclass, ordinal_position)
+            from information_schema.columns
+            where table_schema = '${table_schema}' and table_name = '${table_name}';`);
+        return Promise.resolve(res.at(0));
+    }
+    async getTableExists(table_schema, table_name, sequelize) {
+        let res = await sequelize.query(`SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE  table_schema = '${table_schema}'
+                AND    table_name   = '${table_name}');`);
+        return Promise.resolve(res.at(0).at(0)?.exists);
     }
 }
 exports.DbService = DbService;

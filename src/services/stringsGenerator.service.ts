@@ -26,6 +26,9 @@ export class StringsGeneratorService {
         'pk_name',
         'fk_name',
         'unique_name',
+        'get',
+        'validate',
+        'comment'
     ];
     constructor(_sequelize: Sequelize, dbService: DbService, modelService: ModelService) {
         this.sequelize = _sequelize;
@@ -134,6 +137,18 @@ export class StringsGeneratorService {
                     )},`;
                     tmp_down_string += `defaultValue: ${tableInDb[real_column_name].defaultValue},`;
 
+                    columns_different = true;
+                }
+                //console.log(tableInModel[column].comment, tableInDb[real_column_name].comment);
+                if(tableInModel[column].comment !== tableInDb[real_column_name].comment) {
+                    if(tableInModel[column].comment)
+                        tmp_up_string += `comment: '${tableInModel[column].comment}',`;
+                    else
+                        tmp_up_string += `comment: ${tableInModel[column].comment},`;
+                    if(tableInDb[real_column_name].comment)
+                        tmp_down_string += `comment: '${tableInDb[real_column_name].comment}',`;
+                    else
+                        tmp_down_string += `comment: ${tableInDb[real_column_name].comment},`;
                     columns_different = true;
                 }
 

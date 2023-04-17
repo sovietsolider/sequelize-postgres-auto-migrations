@@ -9,6 +9,7 @@ export interface SchemaTableColumnWithoutConstr {
     attndims: number;
     display_type: string;
     atttypmod: number;
+    comment: string | undefined;
 }
 export interface SchemaTableColumnsConstraints {
     constraint_type: string;
@@ -40,6 +41,7 @@ export interface SchemaColumnType {
     foreign_table_schema: string | undefined;
     primary_key: boolean | undefined;
     unique: boolean | undefined;
+    comment: string | undefined;
 }
 export interface SchemaColumns {
     [key: string]: SchemaColumnType;
@@ -88,6 +90,7 @@ export interface ModelAttribute {
     pk_name?: string;
     fk_name?: string;
     unique_name?: string;
+    comment?: string;
 }
 export interface modelInfoType {
     table_name: string;
