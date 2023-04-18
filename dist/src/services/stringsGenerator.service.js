@@ -84,7 +84,7 @@ class StringsGeneratorService {
                     tmp_down_string += `defaultValue: ${tableInDb[real_column_name].defaultValue},`;
                     columns_different = true;
                 }
-                console.log(tableInModel[column].comment, tableInDb[real_column_name].comment);
+                //console.log(tableInModel[column].comment, tableInDb[real_column_name].comment);
                 if (tableInModel[column].comment !== tableInDb[real_column_name].comment) {
                     if (tableInModel[column].comment)
                         tmp_up_string += `comment: '${tableInModel[column].comment}',`;

@@ -1,11 +1,12 @@
 {
-  "name": "sequelize-postgres-auto-migrations",
-  "version": "1.0.0",
+  "name": "@orpk/sequelize-migrations",
+  "version": "1.0.27",
   "author": "Anatoliy Golikov",
   "main": "./dist/src/common/auto-migrations.js",
-  "types": "./src/common/auto-migrations.ts",
+  "types": "./src/common/auto-migrations.d.ts",
   "type":"commonjs",
   "keywords": ["postgres", "postgresql", "sequelize", "sequelize-typescript", "orm", "database", "db"],
+  "license": "MIT",
   "scripts": {
     "test": "jest",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"

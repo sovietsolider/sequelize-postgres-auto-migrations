@@ -3,13 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sequelize = void 0;
 const auto_migrations_1 = require("./src/common/auto-migrations");
 const sequelize_typescript_1 = require("sequelize-typescript");
+const User_1 = require("./tests/testModels/User");
+const Document_1 = require("./tests/testModels/Document");
+const LogRecord_1 = require("./tests/testModels/LogRecord");
 exports.sequelize = new sequelize_typescript_1.Sequelize({
     database: 'empty',
     dialect: 'postgres',
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [],
+    models: [LogRecord_1.LogRecord, User_1.User, Document_1.Document],
     define: {
         freezeTableName: true,
     },

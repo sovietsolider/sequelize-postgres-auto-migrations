@@ -37,7 +37,6 @@ export class AutoMigrations {
             schema_tables,
             tables,
         ); 
-
         let final_string =
             'module.exports = { up: async (queryInterface, Sequelize) => {await queryInterface.sequelize.transaction(async (t) => {';
         final_string += add_strings.upString;

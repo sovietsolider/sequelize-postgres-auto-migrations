@@ -71,10 +71,15 @@ class Compare {
                         table_schema: curr_ref.model.schema,
                         table_name: curr_ref.model.tableName,
                     }));
-                    order_to_add_constraint_table.push(JSON.stringify({
+                    if (!order_to_add_constraint_table.includes(JSON.stringify({
                         table_schema: table.table_schema,
                         table_name: table.table_name,
-                    }));
+                    }))) {
+                        order_to_add_constraint_table.push(JSON.stringify({
+                            table_schema: table.table_schema,
+                            table_name: table.table_name,
+                        }));
+                    }
                 }
             }
             if (!has_ref)
@@ -234,10 +239,15 @@ class Compare {
                             table_schema: table.table_schema,
                             table_name: table.table_name,
                         })] = curr_table_info;
-                        order_to_add_constraint_table.push(JSON.stringify({
+                        if (!order_to_add_constraint_table.includes(JSON.stringify({
                             table_schema: table.table_schema,
                             table_name: table.table_name,
-                        }));
+                        }))) {
+                            order_to_add_constraint_table.push(JSON.stringify({
+                                table_schema: table.table_schema,
+                                table_name: table.table_name,
+                            }));
+                        }
                         has_ref = true;
                     }
                 }

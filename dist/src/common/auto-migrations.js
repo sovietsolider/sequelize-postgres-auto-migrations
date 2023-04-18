@@ -31,7 +31,6 @@ class AutoMigrations {
         //console.log(final_string)
         let fileService = new file_service_1.FileService(this.sequelize);
         if ((add_strings.upString !== '' || add_strings.downString !== '') && await fileService.checkMigrationHasRun(path)) {
-            console.log("generating file");
             let path_ = await fileService.generateMigrationFile(name, path);
             fileService.writeToMigrationFile(path_, final_string);
         }

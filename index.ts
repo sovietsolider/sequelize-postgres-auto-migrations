@@ -2,7 +2,7 @@ import { AutoMigrations } from "./src/common/auto-migrations";
 import { Sequelize } from "sequelize-typescript";
 import { User } from "./tests/testModels/User";
 import { Document } from "./tests/testModels/Document";
-import { Model1 } from "./tests/testModels/Model1";
+import { LogRecord } from "./tests/testModels/LogRecord";
 
 export const sequelize = new Sequelize({
     database: 'empty',
@@ -10,7 +10,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model1],
+    models: [LogRecord, User, Document],
     define: {
         freezeTableName: true,
     },
