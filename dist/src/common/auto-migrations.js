@@ -8,7 +8,6 @@ const model_service_1 = require("../services/model.service");
 const compare_1 = require("./compare");
 const beautifier = require("js-beautify");
 class AutoMigrations {
-    sequelize;
     constructor(sequelize) {
         this.sequelize = sequelize;
     }

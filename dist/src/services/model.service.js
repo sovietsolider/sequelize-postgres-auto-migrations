@@ -2,8 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModelService = void 0;
 class ModelService {
-    sequelize;
-    migration_options;
     constructor(_sequelize) {
         this.sequelize = _sequelize;
     }
@@ -86,6 +84,8 @@ class ModelService {
         let res_string = '';
         for (const attr in description) {
             //console.log(attr);
+            if (this.getTypeByModelAttr(description[attr].type) === 'Sequelize.VIRTUAL')
+                continue;
             res_string += `${description[attr].field}: {`;
             for (const inside_attr in description[attr]) {
                 if (inside_attr === 'type') {
@@ -154,7 +154,9 @@ class ModelService {
     getModelAttributesNames(description) {
         let res = [];
         for (const column in description)
-            res.push(description[column].field);
+            if (!(this.getTypeByModelAttr(description[column].type) === 'Sequelize.VIRTUAL')) {
+                res.push(description[column].field);
+            }
         return res;
     }
     getColumnNameByField(description, field) {

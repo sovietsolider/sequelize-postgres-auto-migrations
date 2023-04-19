@@ -94,7 +94,7 @@ export class StringsGeneratorService {
             >
         ).getAttributes();
         const model_columns_names = this.modelService.getModelAttributesNames(tableInModel);
-        for (const column in tableInModel) {
+        for (const column of model_columns_names) {
             let real_column_name = tableInModel[column].field as string;
             if (Object.keys(tableInDb).includes(real_column_name)) {
                 let columns_different = false;
@@ -130,7 +130,7 @@ export class StringsGeneratorService {
                     columns_different = true;
                 }
                 if (
-                    tableInModel[column].defaultValue !== tableInDb[real_column_name].defaultValue
+                    (tableInModel[column].defaultValue + '') !== (tableInDb[real_column_name].defaultValue + '')
                 ) {
                     tmp_up_string += `defaultValue: ${JSON.stringify(
                         tableInModel[column].defaultValue,
@@ -150,6 +150,10 @@ export class StringsGeneratorService {
                     else
                         tmp_down_string += `comment: ${tableInDb[real_column_name].comment},`;
                     columns_different = true;
+                }
+                if(columns_different && model_allow_null === tableInDb[real_column_name].allowNull) { //sequelize drop allow null
+                    tmp_up_string += `allowNull: ${model_allow_null},`;
+                    tmp_down_string += `allowNull: ${tableInDb[real_column_name].allowNull},`;
                 }
 
                 tmp_up_string += '},{ transaction: t });';
@@ -405,19 +409,18 @@ export class StringsGeneratorService {
                     'fkey',
                 )}', {transaction: t});`;
             } else {
-                //console.log(removed_fk);
                 //console.log(changed_columns.some(r => this.isReferenced(table_name, table_schema, r, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; })))
                 if (
-                    (JSON.stringify(
+                    ((JSON.stringify(
                         this.modelService.getModelReference(
                             tableInModel[field].references as {
                                 model: { tableName: string; schema: string } | string;
                                 key: string;
                             },
                         ),
-                    ) !== JSON.stringify(tableInDb[field].references) ||
-                        tableInModel[field].onDelete !== tableInDb[field].onDelete ||
-                        tableInModel[field].onUpdate !== tableInDb[field].onUpdate ||
+                    ) !== JSON.stringify(tableInDb[field].references)) ||
+                        tableInModel[field].onDelete?.toLowerCase() !== tableInDb[field].onDelete?.toLowerCase() ||
+                        tableInModel[field].onUpdate?.toLowerCase() !== tableInDb[field].onUpdate?.toLowerCase() ||
                         fk_model_fields.some((r) => changed_columns.includes(r))) &&
                     //|| changed_columns.some(r => this.isReferenced(table_name, table_schema, r, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; }))
                     !removed_fk[
@@ -428,6 +431,7 @@ export class StringsGeneratorService {
                         })
                     ]
                 ) {
+                    console.log("changing fk")
                     let model_ref = this.modelService.getModelReference(
                         tableInModel[field].references as {
                             model: { tableName: string; schema: string } | string;

@@ -2,12 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Compare = void 0;
 class Compare {
-    dbService;
-    modelService;
-    sequelize;
-    removed_fk = {};
-    stringGeneratorService;
     constructor(_sequelize, _dbService, _modelService, _stringGeneratorService) {
+        this.removed_fk = {};
         this.dbService = _dbService;
         this.sequelize = _sequelize;
         this.modelService = _modelService;
@@ -93,14 +89,14 @@ class Compare {
         }
         for (const table of tables) {
             index_strings.push(await this.stringGeneratorService.getStringOfIndexes(table.table_schema, table.table_name, sequelize));
-            if (!schema_tables.find((element) => element.table_name === table?.table_name &&
-                element.table_schema === table?.table_schema)) {
+            if (!schema_tables.find((element) => element.table_name === (table === null || table === void 0 ? void 0 : table.table_name) &&
+                element.table_schema === (table === null || table === void 0 ? void 0 : table.table_schema))) {
                 //console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
-                let curr_model = this.modelService.getModelByTableName(sequelize, table?.table_name, table?.table_schema);
+                let curr_model = this.modelService.getModelByTableName(sequelize, table === null || table === void 0 ? void 0 : table.table_name, table === null || table === void 0 ? void 0 : table.table_schema);
                 addTablesStrings[JSON.stringify({
                     table_schema: table.table_schema,
                     table_name: table.table_name,
-                })] = this.stringGeneratorService.getUpStringToAddTable(curr_model, table?.table_schema, table?.table_name, table.table_schema);
+                })] = this.stringGeneratorService.getUpStringToAddTable(curr_model, table === null || table === void 0 ? void 0 : table.table_schema, table === null || table === void 0 ? void 0 : table.table_name, table.table_schema);
                 this.stringGeneratorService.getStringToCompareUniqueConstraints(table.table_name, table.table_schema, curr_model.getAttributes(), res_up_unique_string, res_down_unique_string);
                 let is_cascade = false;
                 if (referenced_tables.includes(JSON.stringify({
@@ -109,7 +105,7 @@ class Compare {
                 }))) {
                     is_cascade = true;
                 }
-                drop_tables_down_string += this.stringGeneratorService.getUpStringToDeleteTable(table?.table_schema, table?.table_name, is_cascade);
+                drop_tables_down_string += this.stringGeneratorService.getUpStringToDeleteTable(table === null || table === void 0 ? void 0 : table.table_schema, table === null || table === void 0 ? void 0 : table.table_name, is_cascade);
             }
             else {
                 //если атр есть в бд и моделе -> изменяем

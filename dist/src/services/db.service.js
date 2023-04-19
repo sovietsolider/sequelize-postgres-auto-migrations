@@ -4,9 +4,6 @@ exports.DbService = void 0;
 const interfaces_1 = require("../common/interfaces");
 const pg_magic_round = 4;
 class DbService {
-    sequelize;
-    migration_options;
-    modelService;
     constructor(_sequelize, modelService) {
         this.sequelize = _sequelize;
         this.modelService = modelService;
@@ -285,11 +282,12 @@ class DbService {
         return Promise.resolve(res.at(0));
     }
     async getTableExists(table_schema, table_name, sequelize) {
+        var _a;
         let res = await sequelize.query(`SELECT EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE  table_schema = '${table_schema}'
                 AND    table_name   = '${table_name}');`);
-        return Promise.resolve(res.at(0).at(0)?.exists);
+        return Promise.resolve((_a = res.at(0).at(0)) === null || _a === void 0 ? void 0 : _a.exists);
     }
 }
 exports.DbService = DbService;

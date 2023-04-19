@@ -3,16 +3,18 @@ import { Sequelize } from "sequelize-typescript";
 import { User } from "./tests/testModels/User";
 import { Document } from "./tests/testModels/Document";
 import { LogRecord } from "./tests/testModels/LogRecord";
+import { HistoryRecord } from "./tests/testModels/HistoryRecord";
+import { Session } from "./tests/testModels/Session";
 
 export const sequelize = new Sequelize({
-    database: 'empty',
+    database: 'gia',
     dialect: 'postgres',
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [LogRecord, User, Document],
+    models: [LogRecord, User, Document, HistoryRecord, Session],
     define: {
-        freezeTableName: true,
+        timestamps: false
     },
     logging: false
 });

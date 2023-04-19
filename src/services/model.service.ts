@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
-import { ModelAttributeColumnOptions } from 'sequelize';
+import { ModelAttributeColumnOptions, col } from 'sequelize';
 import { Model, ModelCtor } from 'sequelize-typescript';
 import { MigrationOptions } from '../common/interfaces';
 export class ModelService {
@@ -116,6 +116,8 @@ export class ModelService {
         let res_string = '';
         for (const attr in description) {
             //console.log(attr);
+            if(this.getTypeByModelAttr(description[attr].type) === 'Sequelize.VIRTUAL')
+                    continue
             res_string += `${description[attr].field}: {`;
             for (const inside_attr in description[attr]) {
                 if (inside_attr === 'type') {
@@ -210,7 +212,10 @@ export class ModelService {
             | undefined,
     ): Array<string> {
         let res: Array<string> = [];
-        for (const column in description) res.push(description[column].field as string);
+        for (const column in description) 
+        if(!(this.getTypeByModelAttr(description[column].type) === 'Sequelize.VIRTUAL')) {
+            res.push(description[column].field as string);
+        }
         return res;
     }
 

@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileService = void 0;
 const fs = require("fs");
 class FileService {
-    sequelize;
     constructor(_sequelize) {
         this.sequelize = _sequelize;
     }
