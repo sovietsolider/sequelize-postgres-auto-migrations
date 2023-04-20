@@ -43,6 +43,9 @@ export declare class StringsGeneratorService {
             };
         };
     }>;
+    getRawEnumType(tableInModel: {
+        readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
+    }, table_name: string, column_name: string): string;
     getChangedColumns(sequelize: Sequelize, table_schema: string, table_name: string): Promise<string[]>;
     private getStringToChangeConstraints;
     getStringToCompareUniqueConstraints(table_name: string, table_schema: string, tableInModel: {

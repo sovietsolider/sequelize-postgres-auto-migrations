@@ -7,7 +7,10 @@ export declare class ModelService {
     migration_options: MigrationOptions | undefined;
     constructor(_sequelize: Sequelize);
     getModelByTableName(sequelize: Sequelize, table_name: string, table_schema: string): ModelCtor<Model<any, any>>;
-    getTypeByModelAttr(current_type: any, res_string?: string): string;
+    getTypeByModelAttr(current_type: any, res_string?: string, options?: {
+        enum_values: string[];
+        raw_type: string;
+    }): string;
     generateModelsInfo(sequelize: Sequelize): {
         table_name: string;
         table_schema: string;

@@ -135,6 +135,10 @@ export class StringsGeneratorService {
                     tmp_up_string += `type: '${raw_type}',`;
                     tmp_down_string += `type: '${raw_type}',`;
                 }
+                else if(this.modelService.getTypeByModelAttr(tableInModel[column].type, '') === 'Sequelize.INTEGER'
+                && tableInDb[real_column_name].type !== 'Sequelize.INTEGER' ) {
+                    tmp_up_string += `type: 'INTEGER USING CAST ("${real_column_name}" as INTEGER)',`
+                }
                 else {    
                     tmp_up_string += `type: ${this.modelService.getTypeByModelAttr(
                         tableInModel[column].type,

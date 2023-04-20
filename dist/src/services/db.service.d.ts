@@ -14,7 +14,10 @@ export declare class DbService {
     private getForeignKeyOptions;
     private generateTableInfo;
     getRawType(sequelize: Sequelize, table_schema: string, table_name: string, column_name: string): Promise<string>;
-    tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string): Promise<TableToModel>;
+    tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string, options?: {
+        enum_values: string[];
+        column_name: string;
+    }): Promise<TableToModel>;
     private parseDefaultValue;
     getColumnsConstraintsSchemaInfo(table_schema: string, table_name: string): string;
     getTableIndexes(table_schema: string, table_name: string, sequelize: Sequelize): Promise<[unknown[], unknown]>;

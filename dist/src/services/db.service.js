@@ -159,7 +159,7 @@ class DbService {
         let table_info = await this.generateTableInfo(sequelize, table_schema, table_name);
         return Promise.resolve(table_info[column_name].pg_type);
     }
-    async tableToModelInfo(sequelize, table_schema, table_name) {
+    async tableToModelInfo(sequelize, table_schema, table_name, options = { enum_values: [], column_name: '' }) {
         let table_info = await this.generateTableInfo(sequelize, table_schema, table_name);
         let res = {};
         for (const column in table_info) {
@@ -188,8 +188,13 @@ class DbService {
                 else if (final_array_type.match(/\"enum_\.*/)) {
                     let enum_values = (await sequelize.query(`SELECT enum_range(NULL::${table_info[column].pg_type.replace('[]', '')});`)).at(0).at(0);
                     type_string += 'Sequelize.ENUM(';
-                    for (const val of enum_values.enum_range)
+                    for (const val of enum_values.enum_range) {
                         type_string += `'${val}',`;
+                        if (column === options.column_name) {
+                            options.enum_values.push(val);
+                            //console.log(options.enum_values)
+                        }
+                    }
                     type_string += ')';
                 }
                 else

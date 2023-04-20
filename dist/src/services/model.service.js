@@ -23,7 +23,7 @@ class ModelService {
         }
         return res;
     }
-    getTypeByModelAttr(current_type, res_string = '') {
+    getTypeByModelAttr(current_type, res_string = '', options = { enum_values: [], raw_type: '' }) {
         let type_name = current_type.constructor.name;
         if (typeof current_type == typeof '')
             res_string += `'${current_type}'`;
@@ -33,8 +33,9 @@ class ModelService {
         }
         else if (type_name !== 'ARRAY' && type_name !== 'ENUM' && type_name !== 'DATEONLY')
             res_string += `Sequelize.${type_name}`;
-        else if (type_name === 'ARRAY')
-            res_string += `Sequelize.ARRAY(${this.getTypeByModelAttr(current_type.type, res_string)})`;
+        else if (type_name === 'ARRAY') {
+            res_string += `Sequelize.ARRAY(${this.getTypeByModelAttr(current_type.type, res_string, options)})`;
+        }
         else if (type_name === 'DATEONLY')
             res_string += `Sequelize.DATE`;
         else if (type_name === 'ENUM') {
@@ -42,9 +43,11 @@ class ModelService {
             res_string += `Sequelize.ENUM(`;
             for (const [i, element] of current_type.values.entries()) {
                 if (i === current_type.values.length - 1) {
+                    options.enum_values.push(element);
                     res_string += `'${element}',)`;
                     continue;
                 }
+                options.enum_values.push(element);
                 res_string += `'${element}',`;
             }
         }
