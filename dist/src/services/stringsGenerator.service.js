@@ -54,6 +54,7 @@ class StringsGeneratorService {
                 let tmp_down_string = '';
                 tmp_up_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 tmp_down_string = `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
+                console.log(await this.dbService.getRawType(sequelize, table_schema, table_name, real_column_name));
                 tmp_up_string += `type: ${this.modelService.getTypeByModelAttr(tableInModel[column].type)},`;
                 tmp_down_string += `type: ${tableInDb[real_column_name].type},`;
                 if (this.modelService.getTypeByModelAttr(tableInModel[column].type) !==

@@ -155,6 +155,10 @@ class DbService {
         }
         return Promise.resolve(res);
     }
+    async getRawType(sequelize, table_schema, table_name, column_name) {
+        let table_info = await this.generateTableInfo(sequelize, table_schema, table_name);
+        return Promise.resolve(table_info[column_name].pg_type);
+    }
     async tableToModelInfo(sequelize, table_schema, table_name) {
         let table_info = await this.generateTableInfo(sequelize, table_schema, table_name);
         let res = {};

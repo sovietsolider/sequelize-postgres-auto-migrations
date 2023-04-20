@@ -5,6 +5,8 @@ import { Document } from "./tests/testModels/Document";
 import { LogRecord } from "./tests/testModels/LogRecord";
 import { HistoryRecord } from "./tests/testModels/HistoryRecord";
 import { Session } from "./tests/testModels/Session";
+import { Model1 } from "./tests/testModels/Model1";
+
 
 export const sequelize = new Sequelize({
     database: 'gia',
@@ -12,7 +14,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [LogRecord, User, Document, HistoryRecord, Session],
+    models: [LogRecord, User, Document, HistoryRecord, Session, Model1],
     define: {
         timestamps: false
     },

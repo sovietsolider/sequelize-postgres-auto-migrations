@@ -253,7 +253,16 @@ export class DbService {
         return Promise.resolve(res);
     }
 
-    async tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string) {
+    async getRawType(sequelize: Sequelize, table_schema: string, table_name: string, column_name: string) {
+        let table_info: SchemaColumns = await this.generateTableInfo(
+            sequelize,
+            table_schema,
+            table_name,
+        );
+        return Promise.resolve(table_info[column_name].pg_type);
+    }
+
+    async tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string, options: { enum_values: string[], column_name: string} = {enum_values: [], column_name: ''}) {
         let table_info: SchemaColumns = await this.generateTableInfo(
             sequelize,
             table_schema,
@@ -306,8 +315,15 @@ export class DbService {
                             )
                         ).at(0) as Array<any>
                     ).at(0);
+                    
                     type_string += 'Sequelize.ENUM(';
-                    for (const val of enum_values.enum_range) type_string += `'${val}',`;
+                    for (const val of enum_values.enum_range) {
+                        type_string += `'${val}',`;
+                        if(column === options.column_name) {
+                            options.enum_values.push(val);
+                            //console.log(options.enum_values)
+                        }
+                    }
                     type_string += ')';
                 } else type_string += `${sqlToSeqTypes[final_array_type]}`;
                 for (let i = 0; i < table_info[column].dimension; i++) {

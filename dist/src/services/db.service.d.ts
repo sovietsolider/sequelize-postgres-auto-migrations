@@ -13,6 +13,7 @@ export declare class DbService {
     private getPgColumnsInfo;
     private getForeignKeyOptions;
     private generateTableInfo;
+    getRawType(sequelize: Sequelize, table_schema: string, table_name: string, column_name: string): Promise<string>;
     tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string): Promise<TableToModel>;
     private parseDefaultValue;
     getColumnsConstraintsSchemaInfo(table_schema: string, table_name: string): string;
