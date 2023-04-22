@@ -98,7 +98,9 @@ class DbService {
                     where tbl.relname = '${table_name}'
                     and ns.nspname = '${table_schema}') a JOIN (SELECT table_schema, table_name, column_name, data_type, character_maximum_length, column_default, is_nullable, udt_name FROM information_schema.columns WHERE table_schema='${table_schema}' AND table_name='${table_name}') b ON b.column_name = a.attname;`)).at(0);
         const schema_table_columns_constraints = (await sequelize.query(`${this.getColumnsConstraintsSchemaInfo(table_schema, table_name)}`)).at(0);
+        //console.log(table_name)
         //console.log(schema_table_columns_constraints);
+        //console.log('/////')
         const pg_types = await sequelize.query(this.getPgColumnsInfo(table_schema, table_name));
         //console.log(await this.getTableExists(table_schema, table_name, sequelize));
         let schema_table_columns_comments = [];
@@ -259,30 +261,37 @@ class DbService {
         return default_value;
     }
     getColumnsConstraintsSchemaInfo(table_schema, table_name) {
-        return `SELECT \
-            tc.constraint_type, \
-            tc.table_schema, \
-            tc.constraint_name, \
-            tc.table_name, \
-            kcu.column_name, \
-            ccu.table_schema AS foreign_table_schema, \
-            ccu.table_name AS foreign_table_name, \
-            ccu.column_name AS foreign_column_name \
-        FROM \
-            information_schema.table_constraints AS tc \
-        JOIN information_schema.key_column_usage AS kcu \
-        ON tc.constraint_name = kcu.constraint_name \
-        AND tc.table_schema = kcu.table_schema \
-        JOIN (select row_number() over (partition by table_schema, table_name, constraint_name order by row_num) ordinal_position, \
-                 table_schema, table_name, column_name, constraint_name \
-        from   (select row_number() over (order by 1) row_num, table_schema, table_name, column_name, constraint_name \
-                  from   information_schema.constraint_column_usage \
-                 ) t \
-         ) AS ccu \
-        on ccu.constraint_name = tc.constraint_name \
-        and ccu.table_schema = tc.table_schema \
-        and ccu.ordinal_position = kcu.ordinal_position \
-        where tc.table_name = '${table_name}' AND tc.table_schema = '${table_schema}';`;
+        return `SELECT tc.constraint_name,
+        tc.constraint_type,
+        tc.table_name,
+        tc.table_schema,
+        kcu.column_name,
+        tc.is_deferrable,
+        tc.initially_deferred,
+        rc.match_option AS match_type,
+        
+        rc.update_rule AS on_update,
+        rc.delete_rule AS on_delete,
+        ccu.table_name AS foreign_table_name,
+        ccu.table_schema as foreign_table_schema,
+        ccu.column_name AS foreign_column_name
+        FROM information_schema.table_constraints tc
+        
+        LEFT JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_catalog = kcu.constraint_catalog
+        AND tc.constraint_schema = kcu.constraint_schema
+        AND tc.constraint_name = kcu.constraint_name
+        
+        LEFT JOIN information_schema.referential_constraints rc
+        ON tc.constraint_catalog = rc.constraint_catalog
+        AND tc.constraint_schema = rc.constraint_schema
+        AND tc.constraint_name = rc.constraint_name
+        
+        LEFT JOIN information_schema.constraint_column_usage ccu
+        ON rc.unique_constraint_catalog = ccu.constraint_catalog
+        AND rc.unique_constraint_schema = ccu.constraint_schema
+        AND rc.unique_constraint_name = ccu.constraint_name
+        WHERE tc.table_name = '${table_name}' AND tc.table_schema='${table_schema}';`;
     }
     async getTableIndexes(table_schema, table_name, sequelize) {
         let res = await sequelize.query(`SELECT tablename as "tableName", indexname as "indexName",indexdef as "indexDef" FROM pg_indexes WHERE schemaname = '${table_schema}' AND tablename = '${table_name}' ORDER BY tablename, indexname;`);
