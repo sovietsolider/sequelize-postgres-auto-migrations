@@ -47,7 +47,36 @@ export declare class StringsGeneratorService {
         readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
     }, table_name: string, column_name: string): string;
     getChangedColumns(sequelize: Sequelize, table_schema: string, table_name: string): Promise<string[]>;
-    private getStringToChangeConstraints;
+    getStringToChangeConstraints(table_schema: string, table_name: string, tableInModel: {
+        readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
+    }, tableInDb: TableToModel, removed_fk: {
+        [x: string]: boolean;
+    }): Promise<{
+        res_up_string: {
+            add_constr_string: {
+                pk: string;
+                fk: string;
+                unique: string;
+            };
+            remove_constr_string: {
+                pk: string;
+                fk: string;
+                unique: string;
+            };
+        };
+        res_down_string: {
+            add_constr_string: {
+                pk: string;
+                fk: string;
+                unique: string;
+            };
+            remove_constr_string: {
+                pk: string;
+                fk: string;
+                unique: string;
+            };
+        };
+    }>;
     getStringToCompareUniqueConstraints(table_name: string, table_schema: string, tableInModel: {
         readonly [x: string]: ModelAttributeColumnOptions<Model<any, any>>;
     }, res_up_string: {

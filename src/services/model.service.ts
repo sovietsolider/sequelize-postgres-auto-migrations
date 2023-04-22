@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
-import { ModelAttributeColumnOptions, col } from 'sequelize';
+import { ModelAttributeColumnOptions } from 'sequelize';
 import { Model, ModelCtor } from 'sequelize-typescript';
 import { MigrationOptions } from '../common/interfaces';
 export class ModelService {
@@ -31,15 +31,15 @@ export class ModelService {
                         }
                     ).schema === table_schema
                 ) {
-                    res = sequelize.models[m];
+                    return sequelize.models[m] as ModelCtor<Model<any, any>>;
                 }
             } else {
                 if (sequelize.models[m].getTableName() === table_name) {
-                    res = sequelize.models[m];
+                    return sequelize.models[m] as ModelCtor<Model<any, any>>;
                 }
             }
         }
-        return res as ModelCtor<Model<any, any>>;
+        return sequelize.models[''] as ModelCtor<Model<any, any>>;
     }
 
     getTypeByModelAttr(current_type: any, res_string = '', options: { enum_values: string[], raw_type: string} = {enum_values: [], raw_type: ''}) {
@@ -135,6 +135,8 @@ export class ModelService {
                 else if(inside_attr === 'comment' && description[attr].comment === undefined)
                     res_string += `${inside_attr}: ${description[attr].comment},`;
                 if (inside_attr === 'references') {
+                    //console.log('references!')
+                    //console.log(description[attr][inside_attr])
                     let reference = this.getModelReference(
                         description[attr][inside_attr] as {
                             model:
@@ -246,12 +248,11 @@ export class ModelService {
         model: { tableName: string; schema: string } | string;
         key: string;
     }) {
-        let res: any = {};
+        let res: {model: {tableName: string, schema: string}, key:string} = { model: {tableName: '', schema: ''}, key: ''};
         if (typeof model_references.model === typeof {}) {
-            res.model = model_references.model as {
-                tableName: string;
-                schema: string;
-            };
+            let tmp_model = { tableName: (model_references.model as {tableName:string, schema: string}).tableName, 
+                schema: (model_references.model as {tableName:string, schema: string}).schema};
+            res.model = tmp_model;
             res.key = model_references.key;
         } else if (typeof model_references.model === typeof '') {
             res.model = {

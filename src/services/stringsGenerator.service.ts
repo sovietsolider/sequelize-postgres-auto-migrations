@@ -105,7 +105,8 @@ export class StringsGeneratorService {
                 
                 //let raw_type = await this.dbService.getRawType(sequelize, table_schema, table_name, real_column_name);
                 if(this.modelService.getTypeByModelAttr(tableInModel[column].type, '').includes('ARRAY') 
-                && this.modelService.getTypeByModelAttr(tableInModel[column].type, '').includes('ENUM')) {
+                && this.modelService.getTypeByModelAttr(tableInModel[column].type, '').includes('ENUM') 
+                && this.modelService.getTypeByModelAttr(tableInModel[column].type) !== tableInDb[real_column_name].type) {
                     let model_enum_values: string[] = [];
                     let db_enum_values: string[] = [];
                     //getting enum values
@@ -114,26 +115,34 @@ export class StringsGeneratorService {
                     // getting type name
                     let raw_type = this.getRawEnumType(tableInModel, table_name, real_column_name);
                     let type_schema = `"${table_schema}".`;
-                    if(type_schema === '"public".')
-                        type_schema = '';
                     if(tableInDb[real_column_name].type?.includes('ENUM'))
-                        tmp_up_string += `await queryInterface.sequelize.query('alter type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" rename to ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old"', {transaction: t});`
+                        tmp_up_string += `await queryInterface.sequelize.query('alter type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" rename to "${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old"', {transaction: t});`
                     tmp_up_string += `await queryInterface.sequelize.query(\`create type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" as enum ('${model_enum_values.join("','")}')\`, {transaction: t});`;
                     tmp_up_string += `await queryInterface.sequelize.query('alter table "${table_schema}"."${table_name}" alter column "${column}" type ${type_schema}${raw_type} using "${column}"::text::${type_schema}${raw_type};', {transaction: t});`;
-                    tmp_up_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old";', {transaction: t});`;
-
-                    tmp_down_string += `await queryInterface.sequelize.query('alter type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" rename to ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old"', {transaction: t});`
-                    tmp_down_string += `await queryInterface.sequelize.query(\`create type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" as enum ('${db_enum_values.join("','")}')\`, {transaction: t});`;
-                    tmp_down_string += `await queryInterface.sequelize.query('alter table "${table_schema}"."${table_name}" alter column "${real_column_name}" type ${raw_type} using "${column}"::text::${raw_type};', {transaction: t});`;
-                    tmp_down_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old";', {transaction: t});`;
+                    if(tableInDb[real_column_name].type?.includes('ENUM'))
+                        tmp_up_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old";', {transaction: t});`;
+                    if(tableInDb[real_column_name].type?.includes('ENUM')) {
+                        tmp_down_string += `await queryInterface.sequelize.query('alter type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" rename to "${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old"', {transaction: t});`
+                        tmp_down_string += `await queryInterface.sequelize.query(\`create type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}" as enum ('${db_enum_values.join("','")}')\`, {transaction: t});`;
+                        tmp_down_string += `await queryInterface.sequelize.query('alter table "${table_schema}"."${table_name}" alter column "${real_column_name}" type ${type_schema}${raw_type} using "${column}"::text::${type_schema}${raw_type};', {transaction: t});`;
+                        tmp_down_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}_old";', {transaction: t});`;
+                    }
+                    //else
+                    //    tmp_down_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`; 
                 }
                 tmp_up_string += `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 tmp_down_string += `await queryInterface.changeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {`;
                 if(this.modelService.getTypeByModelAttr(tableInModel[column].type, '').includes('ARRAY') 
                 && this.modelService.getTypeByModelAttr(tableInModel[column].type, '').includes('ENUM')) {
                     let raw_type = this.getRawEnumType(tableInModel, table_name, real_column_name);
-                    tmp_up_string += `type: '${raw_type}',`;
-                    tmp_down_string += `type: '${raw_type}',`;
+                     let type_schema = `"${table_schema}".`;
+                    // if(type_schema === '"public".')
+                    //     type_schema = '';
+                    tmp_up_string += `type: '${type_schema}${raw_type}',`;
+                    if(tableInDb[real_column_name].type?.includes('ARRAY') && tableInDb[real_column_name].type?.includes('ENUM'))
+                        tmp_down_string += `type: '${type_schema}${raw_type}',`;
+                    else
+                        tmp_down_string += `type: ${tableInDb[real_column_name].type},`;
                 }
                 else if(this.modelService.getTypeByModelAttr(tableInModel[column].type, '') === 'Sequelize.INTEGER'
                 && tableInDb[real_column_name].type !== 'Sequelize.INTEGER' ) {
@@ -325,7 +334,7 @@ export class StringsGeneratorService {
         return different_columns;
     }
 
-    private async getStringToChangeConstraints(
+    async getStringToChangeConstraints(
         table_schema: string,
         table_name: string,
         tableInModel: {
@@ -456,7 +465,6 @@ export class StringsGeneratorService {
                     'fkey',
                 )}', {transaction: t});`;
             } else {
-                //console.log(changed_columns.some(r => this.isReferenced(table_name, table_schema, r, this.sequelize.models as { [key: string]: ModelCtor<Model<any, any>>; })))
                 if (
                     ((JSON.stringify(
                         this.modelService.getModelReference(
@@ -478,7 +486,14 @@ export class StringsGeneratorService {
                         })
                     ]
                 ) {
-                    console.log("changing fk")
+                    /*console.log(
+                        this.modelService.getModelReference(
+                            tableInModel[field].references as {
+                                model: { tableName: string; schema: string } | string;
+                                key: string;
+                            },
+                        ));
+                    console.log(tableInDb[field].references)*/
                     let model_ref = this.modelService.getModelReference(
                         tableInModel[field].references as {
                             model: { tableName: string; schema: string } | string;
@@ -1030,6 +1045,8 @@ export class StringsGeneratorService {
         table_schema: string,
     ): string {
         let description = model?.getAttributes();
+        //console.log(model)
+        //console.log(description)
         let res_string = `await queryInterface.createTable({tableName: '${table_name}', schema: '${table_schema}'},{`;
         res_string += this.modelService.getModelColumnsAsString(description);
         res_string += `},{ transaction: t, schema: '${model_schema}'});`;

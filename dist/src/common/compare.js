@@ -91,8 +91,9 @@ class Compare {
             index_strings.push(await this.stringGeneratorService.getStringOfIndexes(table.table_schema, table.table_name, sequelize));
             if (!schema_tables.find((element) => element.table_name === (table === null || table === void 0 ? void 0 : table.table_name) &&
                 element.table_schema === (table === null || table === void 0 ? void 0 : table.table_schema))) {
-                //console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
+                console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
                 let curr_model = this.modelService.getModelByTableName(sequelize, table === null || table === void 0 ? void 0 : table.table_name, table === null || table === void 0 ? void 0 : table.table_schema);
+                //console.log(curr_model.getAttributes())
                 addTablesStrings[JSON.stringify({
                     table_schema: table.table_schema,
                     table_name: table.table_name,

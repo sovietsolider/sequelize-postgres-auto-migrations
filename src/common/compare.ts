@@ -204,12 +204,13 @@ export class Compare {
                         element.table_schema === table?.table_schema,
                 )
             ) {
-                //console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
+                console.log(`Adding table: ${table.table_schema}.${table.table_name}`);
                 let curr_model = this.modelService.getModelByTableName(
                     sequelize,
                     table?.table_name,
                     table?.table_schema,
                 );
+                //console.log(curr_model.getAttributes())
                 addTablesStrings[
                     JSON.stringify({
                         table_schema: table.table_schema,
@@ -221,6 +222,7 @@ export class Compare {
                     table?.table_name,
                     table.table_schema,
                 );
+
                 this.stringGeneratorService.getStringToCompareUniqueConstraints(
                     table.table_name,
                     table.table_schema,

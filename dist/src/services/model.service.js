@@ -12,16 +12,16 @@ class ModelService {
             if (typeof tableName === typeof {}) {
                 if (sequelize.models[m].getTableName().tableName === table_name &&
                     sequelize.models[m].getTableName().schema === table_schema) {
-                    res = sequelize.models[m];
+                    return sequelize.models[m];
                 }
             }
             else {
                 if (sequelize.models[m].getTableName() === table_name) {
-                    res = sequelize.models[m];
+                    return sequelize.models[m];
                 }
             }
         }
-        return res;
+        return sequelize.models[''];
     }
     getTypeByModelAttr(current_type, res_string = '', options = { enum_values: [], raw_type: '' }) {
         let type_name = current_type.constructor.name;
@@ -99,6 +99,8 @@ class ModelService {
                 else if (inside_attr === 'comment' && description[attr].comment === undefined)
                     res_string += `${inside_attr}: ${description[attr].comment},`;
                 if (inside_attr === 'references') {
+                    //console.log('references!')
+                    //console.log(description[attr][inside_attr])
                     let reference = this.getModelReference(description[attr][inside_attr]);
                     res_string += `${inside_attr}: { model: {tableName: '${reference.model.tableName}', schema: '${reference.model.schema}'}, key: '${reference.key}'},`;
                     continue;
@@ -173,9 +175,11 @@ class ModelService {
         return res;
     }
     getModelReference(model_references) {
-        let res = {};
+        let res = { model: { tableName: '', schema: '' }, key: '' };
         if (typeof model_references.model === typeof {}) {
-            res.model = model_references.model;
+            let tmp_model = { tableName: model_references.model.tableName,
+                schema: model_references.model.schema };
+            res.model = tmp_model;
             res.key = model_references.key;
         }
         else if (typeof model_references.model === typeof '') {

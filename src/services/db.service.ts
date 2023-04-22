@@ -219,7 +219,7 @@ export class DbService {
             };
             for (const constraint of schema_table_columns_constraints) {
                 if (
-                    column.column_name === constraint.column_name &&
+                    column.column_name === constraint.column_name && column.table_name === table_name && column.table_schema === table_schema &&
                     constraint.constraint_type === 'FOREIGN KEY'
                 ) {
                     res[column.column_name].foreign_key = true;
@@ -229,6 +229,7 @@ export class DbService {
                     res[column.column_name].fk_constraint_name = constraint.constraint_name;
                 }
                 if (
+                    column.column_name === constraint.column_name && column.table_name === table_name && column.table_schema === table_schema &&
                     column.column_name === constraint.column_name &&
                     constraint.constraint_type === 'PRIMARY KEY'
                 ) {
@@ -236,6 +237,7 @@ export class DbService {
                     res[column.column_name].pk_constraint_name = constraint.constraint_name;
                 }
                 if (
+                    column.column_name === constraint.column_name && column.table_name === table_name && column.table_schema === table_schema &&
                     column.column_name === constraint.column_name &&
                     constraint.constraint_type === 'UNIQUE'
                 ) {
@@ -381,6 +383,7 @@ export class DbService {
         default_value = default_value.replace(/ARRAY/g, '');
         default_value = default_value.replace(/::character varying\([^)]*\)/g, '');
         default_value = default_value.replace(/::character varying/g, '');
+        default_value = default_value.replace(/::"enum.*\".*/, '');
         return default_value;
     }
 
@@ -406,6 +409,7 @@ export class DbService {
                  ) t \
          ) AS ccu \
         on ccu.constraint_name = tc.constraint_name \
+        and ccu.table_schema = tc.table_schema \
         and ccu.ordinal_position = kcu.ordinal_position \
         where tc.table_name = '${table_name}' AND tc.table_schema = '${table_schema}';`;
     }
