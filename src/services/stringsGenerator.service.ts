@@ -250,12 +250,14 @@ export class StringsGeneratorService {
                 );
                 up_string.add_column_string += `{ transaction: t });`;
                 down_string.remove_column_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {transaction: t});`;
+                down_string.remove_column_string += await this.getStringToDropArrayEnumType(sequelize, table_schema, table_name, true);
             }
         }
         //column is missing in Model -> delete
         for (const column in tableInDb) {
             if (!model_columns_names.includes(column)) {
                 up_string.remove_column_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {transaction: t});`;
+                up_string.remove_column_string += await this.getStringToDropArrayEnumType(sequelize, table_schema, table_name, false);
                 down_string.add_column_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {`;
                 for (const column_attr in tableInDb[column]) {
                     if (!this.attrs_to_except.includes(column_attr)) {
@@ -1107,13 +1109,56 @@ export class StringsGeneratorService {
         return Promise.resolve(res_string);
     }
 
-    getUpStringToDeleteTable(
+    async getUpStringToDeleteTable(
+        sequelize: Sequelize,
         model_schema: string | undefined,
         table_name: string,
         is_cascade: boolean,
+        via_model: boolean = true
     ) {
+        let res_string = '';
         if (is_cascade)
-            return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ cascade: true, transaction: t });`;
-        return `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ transaction: t });`;
+            res_string += `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ cascade: true, transaction: t });`;
+        res_string += `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ transaction: t });`;
+        
+        res_string += await this.getStringToDropArrayEnumType(sequelize, model_schema as string, table_name, via_model);
+        
+        return Promise.resolve(res_string);
+    }
+
+    async getStringToDropArrayEnumType( 
+        sequelize: Sequelize,
+        table_schema: string,
+        table_name: string,
+        via_model: boolean = true
+    )
+    {
+        let res_string = '';
+        if(via_model) {
+            let curr_model = this.modelService.getModelByTableName(sequelize, table_name, table_schema).getAttributes();
+            
+            for(const col in curr_model) {
+                let raw_type = this.getRawEnumType(curr_model, table_name, col);
+                let type_schema = `"${table_schema}".`;
+                if(raw_type.includes('enum') 
+                && raw_type.includes('[]')) {
+                    res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
+
+                }
+            }
+        }
+        else {
+            let curr_db_info_with_pg = await this.dbService.generateTableInfo(sequelize, table_schema, table_name);
+            for(const col in curr_db_info_with_pg) {
+                let raw_type = curr_db_info_with_pg[col].pg_type;
+                let type_schema = `"${table_schema}".`;
+                if(raw_type.includes('enum') 
+                && raw_type.includes('[]')) {
+                    res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
+    
+                }
+            }
+        }
+        return Promise.resolve(res_string);
     }
 }

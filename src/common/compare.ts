@@ -241,11 +241,15 @@ export class Compare {
                 ) {
                     is_cascade = true;
                 }
-                drop_tables_down_string += this.stringGeneratorService.getUpStringToDeleteTable(
+                //console.log('AAAAAAA')
+                drop_tables_down_string += await this.stringGeneratorService.getUpStringToDeleteTable(
+                    sequelize,
                     table?.table_schema,
                     table?.table_name,
                     is_cascade,
+                    true
                 );
+                
             } else {
                 //если атр есть в бд и моделе -> изменяем
                 let tmp_change_str = await this.stringGeneratorService.getStringsToChangeTable(
@@ -512,11 +516,14 @@ export class Compare {
                     ) {
                         is_cascade = true;
                     }
-                    upString += this.stringGeneratorService.getUpStringToDeleteTable(
+                    upString += await this.stringGeneratorService.getUpStringToDeleteTable(
+                        sequelize,
                         schema_table.table_schema,
                         schema_table.table_name,
                         is_cascade,
+                        false
                     );
+                    
                     //downString
                     addTablesStrings[
                         JSON.stringify({
@@ -545,7 +552,6 @@ export class Compare {
         for (const index of index_strings) {
             downString += index.down_string.add_index_string; //adding index down
         }
-
         return Promise.resolve({ upString, downString });
     }
 }

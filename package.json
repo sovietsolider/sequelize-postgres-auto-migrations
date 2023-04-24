@@ -1,6 +1,6 @@
 {
   "name": "@orpk/sequelize-migrations",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "author": "Anatoliy Golikov",
   "main": "./dist/src/common/auto-migrations.js",
   "types": "./src/common/auto-migrations.d.ts",

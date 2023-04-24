@@ -160,7 +160,7 @@ export class DbService {
         return Promise.resolve({ update_rule: null, delete_rule: null });
     }
 
-    private async generateTableInfo(
+    async generateTableInfo(
         sequelize: Sequelize,
         table_schema: string,
         table_name: string,
