@@ -185,7 +185,6 @@ class StringsGeneratorService {
                 up_string.add_column_string += this.modelService.getModelColumnDescriptionAsString(tableInModel, column);
                 up_string.add_column_string += `{ transaction: t });`;
                 down_string.remove_column_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {transaction: t});`;
-                let model_type = this.modelService.getTypeByModelAttr(tableInModel[column].type, '');
                 down_string.remove_column_string += await this.getStringToDropArrayEnumTypeColumn(sequelize, table_schema, table_name, column, true);
             }
         }
@@ -196,6 +195,10 @@ class StringsGeneratorService {
                 up_string.remove_column_string += await this.getStringToDropArrayEnumTypeColumn(sequelize, table_schema, table_name, column, false);
                 down_string.add_column_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {`;
                 for (const column_attr in tableInDb[column]) {
+                    if (column_attr === 'comment' && tableInDb[column].comment !== undefined)
+                        down_string.add_column_string += `${column_attr}: '${tableInDb[column].comment}',`;
+                    else if (column_attr === 'comment' && tableInDb[column].comment === undefined)
+                        down_string.add_column_string += `${column_attr}: ${tableInDb[column].comment},`;
                     if (!this.attrs_to_except.includes(column_attr)) {
                         down_string.add_column_string += `${column_attr}: ${tableInDb[column][column_attr]},`;
                     }
@@ -690,7 +693,6 @@ class StringsGeneratorService {
             let type_schema = `"${table_schema}".`;
             if (raw_type.includes('enum')
                 && raw_type.includes('[]')) {
-                console.log(true);
                 res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
             }
         }

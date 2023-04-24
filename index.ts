@@ -14,7 +14,7 @@ export const sequelize = new Sequelize({
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [User, Document, LogRecord, HistoryRecord, Session],
+    models: [Model1, Model2, Model3, Model4, Model1_p, Model2_p],
     define: {
         timestamps: false
     },
