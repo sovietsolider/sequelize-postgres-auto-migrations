@@ -137,5 +137,7 @@ export declare class StringsGeneratorService {
     private getConstraintName;
     getUpStringToAddTable(model: ModelCtor<Model<any, any>> | undefined, model_schema: string | undefined, table_name: string, table_schema: string): string;
     getDownStringToAddTable(sequelize: Sequelize, table_schema: string, table_name: string): Promise<string>;
-    getUpStringToDeleteTable(model_schema: string | undefined, table_name: string, is_cascade: boolean): string;
+    getUpStringToDeleteTable(sequelize: Sequelize, model_schema: string | undefined, table_name: string, is_cascade: boolean, via_model?: boolean): Promise<string>;
+    getStringToDropArrayEnumTypeTable(sequelize: Sequelize, table_schema: string, table_name: string, via_model?: boolean): Promise<string>;
+    getStringToDropArrayEnumTypeColumn(sequelize: Sequelize, table_schema: string, table_name: string, column_name: string, via_model: boolean): Promise<string>;
 }

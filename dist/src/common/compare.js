@@ -106,7 +106,8 @@ class Compare {
                 }))) {
                     is_cascade = true;
                 }
-                drop_tables_down_string += this.stringGeneratorService.getUpStringToDeleteTable(table === null || table === void 0 ? void 0 : table.table_schema, table === null || table === void 0 ? void 0 : table.table_name, is_cascade);
+                //console.log('AAAAAAA')
+                drop_tables_down_string += await this.stringGeneratorService.getUpStringToDeleteTable(sequelize, table === null || table === void 0 ? void 0 : table.table_schema, table === null || table === void 0 ? void 0 : table.table_name, is_cascade, true);
             }
             else {
                 //если атр есть в бд и моделе -> изменяем
@@ -277,7 +278,7 @@ class Compare {
                     }))) {
                         is_cascade = true;
                     }
-                    upString += this.stringGeneratorService.getUpStringToDeleteTable(schema_table.table_schema, schema_table.table_name, is_cascade);
+                    upString += await this.stringGeneratorService.getUpStringToDeleteTable(sequelize, schema_table.table_schema, schema_table.table_name, is_cascade, false);
                     //downString
                     addTablesStrings[JSON.stringify({
                         table_schema: schema_table.table_schema,

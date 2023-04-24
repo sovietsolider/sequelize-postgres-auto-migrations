@@ -1,5 +1,6 @@
 import { Sequelize } from 'sequelize-typescript';
 import { MigrationOptions, TableToModel } from '../common/interfaces';
+import { SchemaColumns } from '../common/interfaces';
 import { ModelService } from './model.service';
 export declare class DbService {
     sequelize: Sequelize;
@@ -12,7 +13,7 @@ export declare class DbService {
     }, modelService: ModelService): (table1_name_str: string, table2_name_str: string) => 0 | 1 | -1;
     private getPgColumnsInfo;
     private getForeignKeyOptions;
-    private generateTableInfo;
+    generateTableInfo(sequelize: Sequelize, table_schema: string, table_name: string): Promise<SchemaColumns>;
     getRawType(sequelize: Sequelize, table_schema: string, table_name: string, column_name: string): Promise<string>;
     tableToModelInfo(sequelize: Sequelize, table_schema: string, table_name: string, options?: {
         enum_values: string[];

@@ -250,14 +250,15 @@ export class StringsGeneratorService {
                 );
                 up_string.add_column_string += `{ transaction: t });`;
                 down_string.remove_column_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${real_column_name}', {transaction: t});`;
-                down_string.remove_column_string += await this.getStringToDropArrayEnumType(sequelize, table_schema, table_name, true);
+                let model_type = this.modelService.getTypeByModelAttr(tableInModel[column].type, '');
+                    down_string.remove_column_string += await this.getStringToDropArrayEnumTypeColumn(sequelize, table_schema, table_name, column, true);
             }
         }
         //column is missing in Model -> delete
         for (const column in tableInDb) {
             if (!model_columns_names.includes(column)) {
                 up_string.remove_column_string += `await queryInterface.removeColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {transaction: t});`;
-                up_string.remove_column_string += await this.getStringToDropArrayEnumType(sequelize, table_schema, table_name, false);
+                    up_string.remove_column_string += await this.getStringToDropArrayEnumTypeColumn(sequelize, table_schema, table_name, column, false);
                 down_string.add_column_string += `await queryInterface.addColumn({tableName: '${table_name}', schema: '${table_schema}'}, '${column}', {`;
                 for (const column_attr in tableInDb[column]) {
                     if (!this.attrs_to_except.includes(column_attr)) {
@@ -1120,13 +1121,12 @@ export class StringsGeneratorService {
         if (is_cascade)
             res_string += `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ cascade: true, transaction: t });`;
         res_string += `await queryInterface.dropTable({ tableName: '${table_name}', schema: '${model_schema}'},{ transaction: t });`;
-        
-        res_string += await this.getStringToDropArrayEnumType(sequelize, model_schema as string, table_name, via_model);
+        res_string += await this.getStringToDropArrayEnumTypeTable(sequelize, model_schema as string, table_name, via_model);
         
         return Promise.resolve(res_string);
     }
 
-    async getStringToDropArrayEnumType( 
+    async getStringToDropArrayEnumTypeTable( 
         sequelize: Sequelize,
         table_schema: string,
         table_name: string,
@@ -1136,14 +1136,12 @@ export class StringsGeneratorService {
         let res_string = '';
         if(via_model) {
             let curr_model = this.modelService.getModelByTableName(sequelize, table_name, table_schema).getAttributes();
-            
             for(const col in curr_model) {
                 let raw_type = this.getRawEnumType(curr_model, table_name, col);
                 let type_schema = `"${table_schema}".`;
                 if(raw_type.includes('enum') 
                 && raw_type.includes('[]')) {
                     res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
-
                 }
             }
         }
@@ -1157,6 +1155,37 @@ export class StringsGeneratorService {
                     res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
     
                 }
+            }
+        }
+        return Promise.resolve(res_string);
+    }
+
+    async getStringToDropArrayEnumTypeColumn(sequelize: Sequelize,
+        table_schema: string,
+        table_name: string,
+        column_name: string,
+        via_model: boolean,
+    ) 
+    {
+        let res_string = '';
+        if(via_model) {
+            let curr_model = this.modelService.getModelByTableName(sequelize, table_name, table_schema).getAttributes();
+            let raw_type = this.getRawEnumType(curr_model, table_name, column_name);
+            let type_schema = `"${table_schema}".`;
+            if(raw_type.includes('enum') 
+            && raw_type.includes('[]')) {
+                console.log(true)
+                res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
+            }
+        }
+        else {
+            let curr_db_info_with_pg = await this.dbService.generateTableInfo(sequelize, table_schema, table_name);
+            let raw_type = curr_db_info_with_pg[column_name].pg_type;
+            let type_schema = `"${table_schema}".`;
+            if(raw_type.includes('enum') 
+            && raw_type.includes('[]')) {
+                res_string += `await queryInterface.sequelize.query('drop type ${type_schema}"${raw_type.replace('[]', '').replace(/['"]+/g, '')}";', {transaction: t});`;
+    
             }
         }
         return Promise.resolve(res_string);
