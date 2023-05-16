@@ -1,5 +1,5 @@
 # sequelize-postgres-auto-migrations
-Supports sequelize v6 and sequelize-typescript.
+Supports sequelize-typescript with sequelize v6. Tested only with sequelize-typescript.
 Npm package is available https://www.npmjs.com/package/sequelize-postgres-auto-migrations  
 To generate migration file follow the steps below:
 ```ts
