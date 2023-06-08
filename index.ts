@@ -6,15 +6,15 @@ import { LogRecord } from "./tests/testModels/LogRecord";
 import { HistoryRecord } from "./tests/testModels/HistoryRecord";
 import { Session } from "./tests/testModels/Session";
 //import { Model1, Model1_p, Model2, Model2_p, Model2_test, Model3 } from "./tests/testModels/Model1";
-import { Model1, Model1_p, Model2, Model2_p, Model3, Model4 } from "./tests/testModels/Model1";
+import { Model1, Model1_p, Model2, Model2_p, Model3, Model4, TestModel } from "./tests/testModels/Model1";
 
 export const sequelize = new Sequelize({
-    database: 'gia',
+    database: 'test',
     dialect: 'postgres',
     host: 'localhost',
     username: 'postgres',
     password: '666666',
-    models: [Model1, Model2, Model3, Model4, Model1_p, Model2_p],
+    models: [TestModel],
     define: {
         timestamps: false
     },
